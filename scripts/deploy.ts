@@ -26,6 +26,8 @@ function main() {
   log('Building …')
   execFileSync('npm', ['run', 'build'], { cwd: ROOT, stdio: 'inherit', shell: true })
   writeFileSync(path.join(DIST, '.nojekyll'), '')
+  // never let line-ending conversion touch the encrypted pack files
+  writeFileSync(path.join(DIST, '.gitattributes'), '* -text\n')
 
   if (existsSync(WT)) {
     try {
