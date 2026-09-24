@@ -56,7 +56,7 @@ export function integrityReport(data: HubData, blacklist: BlacklistEntry[] | und
   if (review.length) out.push({ id: 'staff-review', title: 'Staff records flagged by imports', severity: 'info', items: review.map((s) => ({ label: `${s.name} — ${s.review}`, to: `/admin/staff?edit=${encodeURIComponent(s.id)}` })) })
 
   // Invalid sections
-  const badSection = staff.filter((s) => !sections.has(s.section))
+  const badSection = staff.filter((s) => s.section && !sections.has(s.section))
   if (badSection.length) out.push({ id: 'bad-section', title: 'Staff with invalid section assignments', severity: 'alert', items: badSection.map((s) => ({ label: `${s.name} — “${s.section}”`, to: `/admin/staff?edit=${encodeURIComponent(s.id)}` })) })
 
   // Missing duty holders (from today onwards)

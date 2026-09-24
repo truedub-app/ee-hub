@@ -156,13 +156,15 @@ function StaffCard({ s, onOpen }: { s: Staff; onOpen: () => void }) {
         <Avatar name={s.name} tone={sec?.tone} />
         <div className="col grow" style={{ gap: 2, minWidth: 0 }}>
           <strong className="c-name">{s.preferredName ?? s.name}</strong>
-          <span className="small muted">{s.jobTitle ?? 'Editor'} · {sec?.name}</span>
+          <span className="small muted">{[s.jobTitle ?? 'Editor', sec?.name].filter(Boolean).join(' · ')}</span>
         </div>
       </div>
       <div className="row-wrap" style={{ gap: 6 }}>
-        <Badge tone={code?.kind === 'work' || code?.kind === 'duty' ? ctx.sections.find((x) => x.id === bandOf(ctx.idx, a))?.tone ?? 'accent' : code?.tone ?? 'muted'}>
-          Today: {code ? (code.kind === 'work' || code.kind === 'duty' ? ctx.sections.find((x) => x.id === bandOf(ctx.idx, a))?.name ?? code.label : code.label) : 'No entry'}
-        </Badge>
+        {(sec || a) && (
+          <Badge tone={code?.kind === 'work' || code?.kind === 'duty' ? ctx.sections.find((x) => x.id === bandOf(ctx.idx, a))?.tone ?? 'accent' : code?.tone ?? 'muted'}>
+            Today: {code ? (code.kind === 'work' || code.kind === 'duty' ? ctx.sections.find((x) => x.id === bandOf(ctx.idx, a))?.name ?? code.label : code.label) : 'No entry'}
+          </Badge>
+        )}
         {role.inCharge && <Badge tone="incharge"><Star /> In Charge</Badge>}
         {(role.qc2 || a?.code === 'Q') && <Badge tone="qc2"><CheckCircle2 /> QC 2</Badge>}
         {s.review && <Badge tone="warn">Needs review</Badge>}
@@ -187,7 +189,7 @@ export function StaffProfile({ id, onClose }: { id: string; onClose: () => void 
       <>
         {perms.editStaff && <button className="btn" onClick={() => navigate(`/admin/staff?edit=${encodeURIComponent(s.id)}`)}><Pencil /> Edit profile</button>}
         <button className="btn" onClick={() => void share(s, 'Editing & Editorial')}><Share2 /> Share</button>
-        <button className="btn btn-primary" onClick={() => navigate(`/rota?view=week&staff=${encodeURIComponent(s.id)}`)}>Open in rota</button>
+        {sec && <button className="btn btn-primary" onClick={() => navigate(`/rota?view=week&staff=${encodeURIComponent(s.id)}`)}>Open in rota</button>}
       </>
     }>
       <div className="col" style={{ gap: 16 }}>
@@ -205,7 +207,7 @@ export function StaffProfile({ id, onClose }: { id: string; onClose: () => void 
         </div>
         <dl className="kv">
           {s.preferredName && <><dt>Preferred name</dt><dd>{s.preferredName}</dd></>}
-          <dt>Home section</dt><dd>{sec?.name} <span className="mono faint">({sec?.start}–{sec?.end})</span></dd>
+          <dt>Home section</dt><dd>{sec ? <>{sec.name} <span className="mono faint">({sec.start}–{sec.end})</span></> : <span className="faint">Not on the rota</span>}</dd>
           <dt>Extension</dt><dd>{s.extension ? <ExtLinks ext={s.extension} /> : <span className="faint">—</span>}</dd>
           <dt>Email</dt><dd>{s.email ? <a href={`mailto:${s.email}`}>{s.email}</a> : <span className="faint">—</span>}</dd>
           {s.mobile && <><dt>Mobile</dt><dd><a href={`tel:${s.mobile}`}>{s.mobile}</a></dd></>}
@@ -215,7 +217,7 @@ export function StaffProfile({ id, onClose }: { id: string; onClose: () => void 
           {s.aliases.length > 0 && <><dt>Rota spellings</dt><dd className="small muted">{s.aliases.join(' · ')}</dd></>}
         </dl>
         {s.review && <p className="small" style={{ color: 'var(--warn)' }}>⚠ {s.review}</p>}
-        <div>
+        {sec && <div>
           <div className="eyebrow" style={{ marginBottom: 8 }}>Next 7 days</div>
           <div className="row-wrap" style={{ gap: 6 }}>
             {days.map((d) => {
@@ -230,7 +232,7 @@ export function StaffProfile({ id, onClose }: { id: string; onClose: () => void 
               )
             })}
           </div>
-        </div>
+        </div>}
       </div>
     </Modal>
   )

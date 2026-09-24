@@ -20,12 +20,12 @@ import {
   deriveKey, fromB64, hmacHex, hmacKey, importKey, normalizeCode, open, openJson, PBKDF2_ITERATIONS, randomBytes, seal, sealJson, sha256Hex, toB64,
 } from '../../src/lib/crypto.ts'
 import { DATA_KEYS, mergeData, mergeList } from '../../src/data/merge.ts'
-import { nameKey } from '../../src/lib/text.ts'
+import { displayName, initials, nameKey } from '../../src/lib/text.ts'
 import { PACK_FORMAT, PART_SIZE, ROLE_LABEL, type CoreDataFile, type KeyName, type PackFileEntry, type PackIndex, type PackManifest, type RestrictedDataFile, type SlotPayload } from '../../src/lib/packFormat.ts'
 import { DEFAULT_CATEGORIES, DEFAULT_CODES, DEFAULT_SECTIONS } from '../../src/data/defaults.ts'
-import type { Block, BlacklistEntry, BlacklistSheet, DocContent, HubData, ManualDoc, RecordMeta, Role, SegmentationContent } from '../../src/data/types.ts'
+import type { Block, BlacklistEntry, BlacklistSheet, DocContent, HubData, ManualDoc, RecordMeta, Role, SegmentationContent, Staff } from '../../src/data/types.ts'
 import { readWorkbook, workbookGrids } from '../../src/lib/xlsxGrid.ts'
-import { applyPlan, buildPlan, detectLayout } from '../../src/features/rota/import/parseRota.ts'
+import { applyPlan, buildPlan, detectLayout, staffIdFor } from '../../src/features/rota/import/parseRota.ts'
 import { parseContacts } from '../../src/features/contacts/parseContacts.ts'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
@@ -230,6 +230,11 @@ interface Catalogue {
   rota: string[]
   /** Spellings used in the rota → full staff names, e.g. { "Sam": "Samantha" } */
   staffNames?: Record<string, string>
+  /**
+   * Team members who are not on the rota (e.g. the head of department), or extra details for people who are.
+   * Matched by name; `section` defaults to '' = not on the rota.
+   */
+  team?: (Partial<Pick<Staff, 'jobTitle' | 'section' | 'extension' | 'email' | 'mobile' | 'preferredName'>> & { name: string })[]
   contacts?: string
   guides: {
     id: string; title: string; source: string; category: string; description: string; owner?: string; updated?: string
@@ -292,6 +297,22 @@ async function main() {
       })
       log(`ROTA ${rel} [${grid.sheet.trim()}]: ${plan.stats.staff} staff, ${plan.stats.days} days, ${plan.stats.cells} cells, ${plan.warnings.length} notes`)
     }
+  }
+
+  // ---- Team members from the catalogue (not on the rota, or extra details) ------------------
+  for (const t of cat.team ?? []) {
+    const { name, ...details } = t
+    const key = nameKey(name)
+    const found = data.staff.find((s) => nameKey(s.name) === key || s.aliases.some((a) => nameKey(a) === key))
+    if (found) Object.assign(found, details)
+    else {
+      const display = displayName(name)
+      data.staff.push({
+        id: staffIdFor(display, new Set(data.staff.map((s) => s.id))), name: display, initials: initials(display), aliases: [],
+        section: '', active: true, updatedAt: mtime(path.join(CONTENT, 'catalogue.json')), ...details,
+      })
+    }
+    log(`Team: ${displayName(name)}${t.jobTitle ? ` — ${t.jobTitle}` : ''}${found ? ' (details added to the rota record)' : ' (not on the rota)'}`)
   }
 
   // ---- Contacts -------------------------------------------------------------------------

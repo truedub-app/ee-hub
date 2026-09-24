@@ -61,7 +61,7 @@ export function buildSearchIndex(input: IndexInput): SearchIndex {
     if (s.deleted) continue
     docs.push({
       id: `staff:${s.id}`, kind: 'staff', refId: s.id, title: s.name,
-      subtitle: [s.jobTitle ?? 'Editing & Editorial', sec(s.section)].join(' · '),
+      subtitle: [s.jobTitle ?? 'Editing & Editorial', s.section && sec(s.section)].filter(Boolean).join(' · '),
       tags: [s.preferredName, ...(s.aliases ?? []), s.extension, s.email, ...(s.skills ?? []), ...(s.languages ?? [])].filter(Boolean).join(' '),
       route: `/contacts/staff/${encodeURIComponent(s.id)}`,
     })

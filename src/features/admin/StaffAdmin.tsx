@@ -51,7 +51,10 @@ function StaffForm({ initial, onClose }: { initial?: Staff; onClose: () => void 
           <Field label="Preferred name" htmlFor="sf-pref"><input id="sf-pref" className="input" value={s.preferredName ?? ''} onChange={(e) => set({ preferredName: e.target.value || undefined })} /></Field>
           <Field label="Job title" htmlFor="sf-title"><input id="sf-title" className="input" value={s.jobTitle ?? ''} onChange={(e) => set({ jobTitle: e.target.value || undefined })} placeholder="e.g. Senior Editor" /></Field>
           <Field label="Home section" htmlFor="sf-sec">
-            <select id="sf-sec" className="select" value={s.section} onChange={(e) => set({ section: e.target.value })}>{sections.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select>
+            <select id="sf-sec" className="select" value={s.section} onChange={(e) => set({ section: e.target.value })}>
+              {sections.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+              <option value="">Not on the rota (e.g. head of department)</option>
+            </select>
           </Field>
           <Field label="Extension" htmlFor="sf-ext"><input id="sf-ext" className="input" value={s.extension ?? ''} onChange={(e) => set({ extension: e.target.value || undefined })} inputMode="tel" /></Field>
           <Field label="Email" htmlFor="sf-email"><input id="sf-email" type="email" className="input" value={s.email ?? ''} onChange={(e) => set({ email: e.target.value || undefined })} /></Field>
@@ -132,7 +135,7 @@ export function StaffAdmin() {
               return (
                 <tr key={s.id} className={cx(!s.active && 'faint')}>
                   <td><div className="row" style={{ gap: 10 }}><Avatar name={s.name} size="sm" tone={sec?.tone} /><div className="col" style={{ gap: 0 }}><strong>{s.name}</strong><span className="tiny faint">{s.jobTitle ?? '—'}</span></div></div></td>
-                  <td>{sec?.name ?? <Badge tone="alert">{s.section}</Badge>}</td>
+                  <td>{sec?.name ?? (s.section ? <Badge tone="alert">{s.section}</Badge> : <span className="faint">Not on the rota</span>)}</td>
                   <td className="small">{[s.extension && `Ext ${s.extension}`, s.email].filter(Boolean).join(' · ') || <span className="faint">Missing</span>}</td>
                   <td><div className="row" style={{ gap: 4 }}>{s.inChargeEligible && <Badge tone="incharge"><Star /></Badge>}{s.qc2Eligible && <Badge tone="qc2"><CheckCircle2 /></Badge>}</div></td>
                   <td>{s.review ? <Badge tone="warn" title={s.review}>Review</Badge> : s.active ? <Badge tone="qc2">Active</Badge> : <Badge tone="muted">Inactive</Badge>}</td>

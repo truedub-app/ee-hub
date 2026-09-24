@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dayModel, dutyEligibility, validateBand } from './model'
+import { dayModel, dutyEligibility, staffBySection, validateBand } from './model'
 import { DEFAULT_CODES, DEFAULT_SECTIONS } from '../../data/defaults'
 import type { DutyAssignment, RotaAssignment, Staff } from '../../data/types'
 
@@ -51,5 +51,14 @@ describe('duty rules', () => {
     expect(m.absent.map((p) => p.staff.id)).toEqual(['d'])
     expect(m.off.map((p) => p.staff.id)).toEqual(['c'])
     expect(bands.find((b) => b.section.id === 'afternoon')!.working).toHaveLength(1)
+  })
+})
+
+describe('team members who are not on the rota', () => {
+  it('keeps them out of the rota grid', () => {
+    const c = { ...ctx(), staff: [...ctx().staff, staff('head', '')] }
+    const grouped = [...staffBySection(c).values()].flat().map((s) => s.id)
+    expect(grouped).not.toContain('head')
+    expect(grouped).toContain('a')
   })
 })

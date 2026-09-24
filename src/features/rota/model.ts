@@ -201,7 +201,8 @@ export function staffBySection(ctx: RotaCtx): Map<string, Staff[]> {
   const out = new Map<string, Staff[]>()
   for (const s of activeSections(ctx.sections)) out.set(s.id, [])
   for (const st of ctx.staff) {
-    if (st.deleted || !st.active) continue
+    // people who are not on the rota (no home section) stay out of the rota grid
+    if (st.deleted || !st.active || !st.section) continue
     const list = out.get(st.section) ?? out.get([...out.keys()][0] ?? '')
     list?.push(st)
   }

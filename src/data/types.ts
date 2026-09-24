@@ -48,7 +48,7 @@ export interface Staff extends RecordMeta {
   aliases: string[] // raw spellings seen in rota imports
   employeeId?: string
   jobTitle?: string
-  section: string // home section id
+  section: string // home section id; '' = not on the rota (e.g. the head of department)
   suite?: string
   extension?: string
   email?: string
