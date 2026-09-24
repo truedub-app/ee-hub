@@ -125,7 +125,7 @@ npm run deploy       # publish dist to the gh-pages branch
 The Windows content pipeline uses Python 3 (`pip install pymupdf python-docx pillow`), ffmpeg and the built-in
 Windows OCR engine (Arabic + English language packs).
 
-**Logo and icons.** `src/assets/mbc-logo.svg` is the MBC Group logo. The app draws it in the text colour, so it works in both themes. After changing it, run `python scripts/brand/make_icons.py` to regenerate the favicon and the app (home-screen) icons.
+**Logo and icons.** `src/assets/mbc-logo.svg` is the MBC Group logo. The app draws it in the text colour, so it works in both themes. After changing it, run `python scripts/brand/make_icons.py` to regenerate the favicon and the app (home-screen) icons. Give the icons a new file-name prefix at the same time (`NAME` in the script, plus `index.html` and `vite.config.ts`). Otherwise browsers and installed apps keep showing the old ones.
 
 ## Known limits
 

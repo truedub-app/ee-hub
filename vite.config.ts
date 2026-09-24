@@ -15,7 +15,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: false,
-      includeAssets: ['favicon.svg', 'icons/*.png'],
+      includeAssets: ['icons/*.svg', 'icons/*.png'],
       manifest: {
         name: 'Editing & Editorial Hub',
         short_name: 'EE Hub',
@@ -28,9 +28,10 @@ export default defineConfig({
         scope: '.',
         categories: ['business', 'productivity'],
         icons: [
-          { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
-          { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' },
-          { src: 'icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          // a new icon design needs new file names, or installed apps keep the old icon (scripts/brand/make_icons.py)
+          { src: 'icons/mbc-192.png', sizes: '192x192', type: 'image/png' },
+          { src: 'icons/mbc-512.png', sizes: '512x512', type: 'image/png' },
+          { src: 'icons/mbc-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
       workbox: {

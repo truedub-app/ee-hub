@@ -3,7 +3,9 @@ Build the favicon and the app (home-screen) icons from the MBC logo.
 
     python scripts/brand/make_icons.py
 
-Reads src/assets/mbc-logo.svg and writes public/favicon.svg plus the PNG icons in public/icons.
+Reads src/assets/mbc-logo.svg and writes the favicon and PNG icons into public/icons.
+Browsers and installed apps keep icons for a long time, so a new design needs new file names:
+change NAME below (and the names in index.html and vite.config.ts) whenever the icons change.
 The logo is drawn in white on the app's dark navy. The small GROUP line is left out of the favicon,
 where it would be unreadable.
 Needs PyMuPDF (to draw the SVG) and Pillow.
@@ -18,6 +20,7 @@ from PIL import Image, ImageDraw
 ROOT = Path(__file__).resolve().parents[2]
 LOGO = (ROOT / 'src' / 'assets' / 'mbc-logo.svg').read_text(encoding='utf-8')
 BG_TOP, BG_BOTTOM = '#17213b', '#070b16'  # app surface → app background
+NAME = 'mbc'  # file-name prefix; see the note at the top
 
 
 def group(name: str) -> str:
@@ -46,7 +49,7 @@ def hex_rgb(h: str) -> tuple[int, int, int]:
     return tuple(int(h[i:i + 2], 16) for i in (1, 3, 5))
 
 
-def png(size: int, logo_width: float, radius: float, out: Path, opaque: bool) -> None:
+def png(size: int, logo_width: float, radius: float, out: Path, opaque: bool, full: bool = True) -> None:
     """PNG icon. PyMuPDF can't paint SVG gradients, so Pillow draws the background and PyMuPDF only the logo."""
     big = size * 4  # work at 4x and scale down for smooth edges
     top, bottom = hex_rgb(BG_TOP), hex_rgb(BG_BOTTOM)
@@ -59,7 +62,7 @@ def png(size: int, logo_width: float, radius: float, out: Path, opaque: bool) ->
         ImageDraw.Draw(mask).rounded_rectangle((0, 0, big - 1, big - 1), radius=big * radius, fill=255)
         bg.putalpha(mask)
     # the logo alone, white on transparent, at its final position
-    logo = icon_svg(size, logo_width, radius, full=True).replace('fill="url(#bg)"', 'fill="none"')
+    logo = icon_svg(size, logo_width, radius, full=full).replace('fill="url(#bg)"', 'fill="none"')
     pix = pymupdf.open(stream=logo.encode(), filetype='svg')[0].get_pixmap(matrix=pymupdf.Matrix(4, 4), alpha=True)
     bg.alpha_composite(Image.open(io.BytesIO(pix.tobytes('png'))).convert('RGBA'))
     im = bg.resize((size, size), Image.LANCZOS)
@@ -72,13 +75,15 @@ def png(size: int, logo_width: float, radius: float, out: Path, opaque: bool) ->
 def main() -> None:
     icons = ROOT / 'public' / 'icons'
     fav = icon_svg(64, 0.86, 0.22, full=False)
-    (ROOT / 'public' / 'favicon.svg').write_text(fav + '\n', encoding='utf-8', newline='\n')
-    print('  public/favicon.svg')
+    icons.mkdir(parents=True, exist_ok=True)
+    (icons / f'{NAME}-favicon.svg').write_text(fav + '\n', encoding='utf-8', newline='\n')
+    print(f'  public/icons/{NAME}-favicon.svg')
+    png(32, 0.86, 0.22, icons / f'{NAME}-favicon-32.png', opaque=False, full=False)
     # "any" icons keep their own rounded corners; maskable and Apple icons are full-bleed (the system shapes them)
-    png(192, 0.74, 0.2, icons / 'icon-192.png', opaque=False)
-    png(512, 0.74, 0.2, icons / 'icon-512.png', opaque=False)
-    png(512, 0.6, 0, icons / 'icon-maskable-512.png', opaque=True)
-    png(180, 0.7, 0, icons / 'apple-touch-icon.png', opaque=True)
+    png(192, 0.74, 0.2, icons / f'{NAME}-192.png', opaque=False)
+    png(512, 0.74, 0.2, icons / f'{NAME}-512.png', opaque=False)
+    png(512, 0.6, 0, icons / f'{NAME}-maskable-512.png', opaque=True)
+    png(180, 0.7, 0, icons / f'{NAME}-apple-touch-180.png', opaque=True)
 
 
 if __name__ == '__main__':
