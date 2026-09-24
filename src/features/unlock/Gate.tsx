@@ -8,6 +8,7 @@ import { createVault, LockedOut, readVault, recoverWithCode, setPin, unlockWithP
 import { ROLE_LABEL } from '../../lib/packFormat'
 import { PinEntry } from './PinPad'
 import { Notice, SearchInput, Avatar } from '../../ui/primitives'
+import { MbcLogo } from '../../ui/MbcLogo'
 import { confirmDialog } from '../../ui/toast'
 import { fold } from '../../lib/text'
 import { claimSetupCode, clearSetupLinkFromUrl, codeFromSetupLink, showSetupLinkInUrl } from '../../lib/setupLink'
@@ -19,7 +20,7 @@ function GateFrame({ title, subtitle, children, step, foot }: { title: string; s
     <main className="gate">
       <div className="gate-card">
         <div className="gate-brand">
-          <div className="brand-mark" aria-hidden>EE</div>
+          <MbcLogo className="gate-logo" />
           <div>
             <h1>{title}</h1>
             {subtitle && <p style={{ marginTop: 6 }}>{subtitle}</p>}
@@ -83,7 +84,7 @@ function AccessCodeForm({ onDone, submitLabel = 'Continue', check }: { onDone: (
         <div className="row" style={{ gap: 8 }}>
           <input
             id="code"
-            className="input mono grow"
+            className="input mono grow code-input"
             value={code}
             onChange={(e) => setCode(asCode(e.target.value))}
             placeholder="XXXX-XXXX-XXXX-XXXX"
@@ -91,12 +92,12 @@ function AccessCodeForm({ onDone, submitLabel = 'Continue', check }: { onDone: (
             autoCapitalize="characters"
             spellCheck={false}
             autoFocus
-            style={{ minHeight: 48, minWidth: 0, fontSize: '1.05rem', letterSpacing: '0.08em' }}
+            style={{ minHeight: 48, minWidth: 0 }}
             aria-invalid={!!error}
           />
           {canPaste && (
-            <button type="button" className="btn" style={{ minHeight: 48 }} onClick={paste}>
-              <ClipboardPaste /> Paste
+            <button type="button" className="btn paste-btn" style={{ minHeight: 48 }} onClick={paste} aria-label="Paste" title="Paste">
+              <ClipboardPaste /> <span className="paste-label">Paste</span>
             </button>
           )}
         </div>

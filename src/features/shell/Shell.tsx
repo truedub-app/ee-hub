@@ -7,6 +7,7 @@ import {
 import { canSeeBlacklist, useHub, usePerms } from '../../data/store'
 import { relativeDateTime } from '../../lib/dates'
 import { cx } from '../../ui/primitives'
+import { MbcLogo } from '../../ui/MbcLogo'
 import { SearchPalette, useSearchPalette } from '../search/SearchPalette'
 import { useNotices } from '../home/notices'
 import { useInstall } from '../../lib/install'
@@ -97,7 +98,7 @@ export function Shell({ children }: { children: ReactNode }) {
       <a className="skip-link" href="#main">Skip to content</a>
       <aside className="sidebar" aria-label="Main navigation">
         <NavLink to="/" className="brand" aria-label="Editing & Editorial Hub — Home">
-          <span className="brand-mark" aria-hidden>EE</span>
+          <MbcLogo variant="mark" className="brand-logo" decorative />
           <span className="brand-text">
             <strong>Editing &amp; Editorial Hub</strong>
             <span>Group TV · Editing &amp; Editorial</span>

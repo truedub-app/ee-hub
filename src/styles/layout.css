@@ -6,14 +6,10 @@
   position: sticky; top: 0; height: 100dvh; display: flex; flex-direction: column; gap: 4px;
   padding: 16px 12px; background: var(--panel); border-right: 1px solid var(--line); overflow-y: auto;
 }
-.brand { display: flex; align-items: center; gap: 11px; padding: 4px 8px 18px; text-decoration: none !important; color: var(--text); }
-.brand-mark {
-  display: grid; place-items: center; width: 40px; height: 40px; border-radius: 11px; flex: none;
-  font-weight: 800; font-size: 0.92rem; letter-spacing: -0.02em; color: #fff;
-  background: linear-gradient(135deg, #3b82f6 0%, #6366f1 45%, #ec4899 100%);
-  box-shadow: 0 6px 18px -6px rgba(99, 102, 241, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.25);
-}
-.brand-text { line-height: 1.15; min-width: 0; }
+/* MBC logo on top, the app name under it */
+.brand { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 8px 12px 18px; text-decoration: none !important; color: var(--text); }
+.brand-logo { width: 80px; height: auto; color: var(--text); }
+.brand-text { line-height: 1.2; min-width: 0; }
 .brand-text strong { display: block; font-size: 0.92rem; font-weight: 700; }
 .brand-text span { font-size: 0.72rem; color: var(--text-3); }
 
@@ -35,7 +31,8 @@
 .sidebar-foot { margin-top: auto; padding-top: 14px; display: flex; flex-direction: column; gap: 8px; }
 .collapsed .brand-text, .collapsed .nav-label, .collapsed .nav-item span, .collapsed .nav-item .nav-badge, .collapsed .sidebar-foot .hide-rail { display: none; }
 .collapsed .nav-item { justify-content: center; padding: 0; }
-.collapsed .brand { justify-content: center; padding: 4px 0 18px; }
+.collapsed .brand { align-items: center; padding: 8px 0 18px; }
+.collapsed .brand-logo { width: 44px; }
 
 .status-pill {
   display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 11px; border-radius: 99px;
@@ -115,7 +112,13 @@
 .gate-card { width: min(440px, 100%); display: flex; flex-direction: column; gap: 20px; }
 .gate-card .card { padding: 26px; }
 .gate-brand { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
-.gate-brand .brand-mark { width: 60px; height: 60px; border-radius: 17px; font-size: 1.3rem; }
+.gate-logo { width: 148px; height: auto; margin-bottom: 4px; color: var(--text); }
+.code-input { font-size: 1.05rem; letter-spacing: 0.08em; }
+/* phones: keep the whole XXXX-XXXX-XXXX-XXXX code visible next to the Paste button */
+@media (max-width: 420px) {
+  .gate .paste-label { display: none; }
+  .code-input { font-size: 0.95rem; letter-spacing: 0.02em; }
+}
 .gate-brand h1 { font-size: 1.35rem; }
 .gate-brand p { color: var(--text-2); font-size: 0.9rem; }
 .gate-foot { text-align: center; font-size: 0.75rem; color: var(--text-3); }

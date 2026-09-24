@@ -125,6 +125,8 @@ npm run deploy       # publish dist to the gh-pages branch
 The Windows content pipeline uses Python 3 (`pip install pymupdf python-docx pillow`), ffmpeg and the built-in
 Windows OCR engine (Arabic + English language packs).
 
+**Logo and icons.** `src/assets/mbc-logo.svg` is the MBC Group logo. The app draws it in the text colour, so it works in both themes. After changing it, run `python scripts/brand/make_icons.py` to regenerate the favicon and the app (home-screen) icons.
+
 ## Known limits
 
 - Each device holds its own copy. Publishing is how every device converges on the same data.
