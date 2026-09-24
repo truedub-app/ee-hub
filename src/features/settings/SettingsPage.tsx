@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
-import { CloudDownload, HardDrive, KeyRound, Lock, Moon, RefreshCw, RotateCcw, ShieldCheck, Sun, Trash2, UserRound, Wifi, WifiOff } from 'lucide-react'
+import { CircleCheck, CloudDownload, HardDrive, KeyRound, Lock, MonitorSmartphone, Moon, RefreshCw, RotateCcw, ShieldCheck, Sun, Trash2, UserRound, Wifi, WifiOff } from 'lucide-react'
 import { useHub, usePerms } from '../../data/store'
 import { essentialEntries, syncPack, videoEntries, warmEssentials } from '../../data/sync'
 import { cachedBytes, evict, isCached, prefetch } from '../../lib/pack'
@@ -13,6 +13,8 @@ import { confirmDialog, toast } from '../../ui/toast'
 import { IdentityPicker } from '../unlock/Gate'
 import { PinEntry } from '../unlock/PinPad'
 import { live } from '../../data/merge'
+import { deviceNoun, useInstall } from '../../lib/install'
+import { useInstallAction } from '../install/Install'
 
 function Section({ id, title, icon, children }: { id: string; title: string; icon: ReactNode; children: ReactNode }) {
   return (
@@ -24,6 +26,28 @@ function Section({ id, title, icon, children }: { id: string; title: string; ico
 }
 
 /** Set, change or remove the device PIN. 'set' asks for a new PIN; 'change' and 'remove' first check the current one. */
+function InstallSection() {
+  const st = useInstall()
+  const action = useInstallAction()
+  return (
+    <Section id="app" title="Install app" icon={<MonitorSmartphone />}>
+      {st.standalone ? (
+        <Notice tone="qc2" icon={<CircleCheck />}>You’re using the installed Hub on this {deviceNoun(st.platform)}. It updates itself whenever a network is available.</Notice>
+      ) : (
+        <>
+          <p className="small muted">The Hub is open in a browser tab. Install it to get its own icon, a full-screen window without the address bar, and quicker access offline — like a normal app.</p>
+          <div className="row-wrap">
+            <button className="btn btn-primary" onClick={action.run}><MonitorSmartphone /> {st.canPrompt ? 'Install the Hub' : 'How to install'}</button>
+            {st.justInstalled && <Badge tone="qc2">Installed — open it from your {st.platform === 'android' || st.platform === 'ios' ? 'home screen' : 'Start menu or Dock'}</Badge>}
+          </div>
+          {st.platform === 'ios' && <p className="tiny faint">On iPhone and iPad the Home Screen app keeps its own data, so it asks for the department access code once.</p>}
+        </>
+      )}
+      {action.dialog}
+    </Section>
+  )
+}
+
 function PinDialog({ action, onClose }: { action: 'set' | 'change' | 'remove'; onClose: () => void }) {
   const session = useHub((s) => s.session)
   const [step, setStep] = useState<'old' | 'new' | 'confirm'>(action === 'set' ? 'new' : 'old')
@@ -191,6 +215,8 @@ export function SettingsPage() {
         </div>
         <p className="tiny faint">Each device keeps its own encrypted copy. When a network is available the Hub fetches the latest published version automatically; everything keeps working when the studio network is down.</p>
       </Section>
+
+      <InstallSection />
 
       <Section id="profile" title="Profile" icon={<UserRound />}>
         <dl className="kv">

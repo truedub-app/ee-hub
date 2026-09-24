@@ -15,8 +15,10 @@ import './styles/layout.css'
 import App from './App'
 import { registerSW } from 'virtual:pwa-register'
 import { readSetupCodeFromUrl } from './lib/setupLink'
+import { listenForInstall } from './lib/install'
 
 readSetupCodeFromUrl()
+listenForInstall()
 
 registerSW({ immediate: true })
 

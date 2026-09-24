@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { ArrowLeft, KeyRound, ShieldCheck, WifiOff, RotateCcw, UserRound } from 'lucide-react'
+import { ArrowLeft, ClipboardPaste, KeyRound, MonitorSmartphone, ShieldCheck, WifiOff, RotateCcw, UserRound } from 'lucide-react'
 import { useHub } from '../../data/store'
 import { restoreIndex, syncPack } from '../../data/sync'
 import { fetchManifest, unlockSlot } from '../../lib/pack'
@@ -10,7 +10,9 @@ import { PinEntry } from './PinPad'
 import { Notice, SearchInput, Avatar } from '../../ui/primitives'
 import { confirmDialog } from '../../ui/toast'
 import { fold } from '../../lib/text'
-import { claimSetupCode } from '../../lib/setupLink'
+import { claimSetupCode, clearSetupLinkFromUrl, codeFromSetupLink, showSetupLinkInUrl } from '../../lib/setupLink'
+import { deviceNoun, useInstall } from '../../lib/install'
+import { CodeBox, InstallDialog, InstallSteps } from '../install/Install'
 
 function GateFrame({ title, subtitle, children, step, foot }: { title: string; subtitle?: ReactNode; children: ReactNode; step?: [number, number]; foot?: ReactNode }) {
   return (
@@ -35,10 +37,22 @@ function GateFrame({ title, subtitle, children, step, foot }: { title: string; s
   )
 }
 
+/** A typed code, or the code inside a pasted setup link. */
+const asCode = (text: string) => (codeFromSetupLink(text) ?? text.trim()).toUpperCase()
+
 function AccessCodeForm({ onDone, submitLabel = 'Continue', check }: { onDone: (code: string, slot: SlotPayload) => void; submitLabel?: string; check?: (code: string) => Promise<SlotPayload | null> }) {
   const [code, setCode] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<ReactNode>()
+  const canPaste = typeof navigator.clipboard?.readText === 'function'
+  const paste = async () => {
+    try {
+      const text = await navigator.clipboard.readText()
+      if (text.trim()) setCode(asCode(text))
+    } catch {
+      /* the user declined clipboard access */
+    }
+  }
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     setBusy(true)
@@ -66,20 +80,27 @@ function AccessCodeForm({ onDone, submitLabel = 'Continue', check }: { onDone: (
     <form className="col" style={{ gap: 14 }} onSubmit={submit}>
       <div className="field">
         <label htmlFor="code">Department access code</label>
-        <input
-          id="code"
-          className="input mono"
-          value={code}
-          onChange={(e) => setCode(e.target.value.toUpperCase())}
-          placeholder="XXXX-XXXX-XXXX-XXXX"
-          autoComplete="off"
-          autoCapitalize="characters"
-          spellCheck={false}
-          autoFocus
-          style={{ minHeight: 48, fontSize: '1.05rem', letterSpacing: '0.08em' }}
-          aria-invalid={!!error}
-        />
-        <span className="hint">Your administrator gives each role its own code. It decides what you can see.</span>
+        <div className="row" style={{ gap: 8 }}>
+          <input
+            id="code"
+            className="input mono grow"
+            value={code}
+            onChange={(e) => setCode(asCode(e.target.value))}
+            placeholder="XXXX-XXXX-XXXX-XXXX"
+            autoComplete="off"
+            autoCapitalize="characters"
+            spellCheck={false}
+            autoFocus
+            style={{ minHeight: 48, minWidth: 0, fontSize: '1.05rem', letterSpacing: '0.08em' }}
+            aria-invalid={!!error}
+          />
+          {canPaste && (
+            <button type="button" className="btn" style={{ minHeight: 48 }} onClick={paste}>
+              <ClipboardPaste /> Paste
+            </button>
+          )}
+        </div>
+        <span className="hint">Type the code or paste your setup link. Your administrator gives each role its own code — it decides what you can see.</span>
       </div>
       {error && <Notice tone="alert">{error}</Notice>}
       <button className="btn btn-primary btn-lg" disabled={busy || code.replace(/[^A-Z0-9]/gi, '').length < 8}>
@@ -170,11 +191,19 @@ export function IdentityPicker({ onDone, onSkip }: { onDone: (staffId: string | 
   )
 }
 
-/** First run on a device: access code → download → who are you. No PIN unless turned on later in Settings. */
+/**
+ * First run on a device: access code → download → who are you. No PIN unless turned on later in Settings.
+ * On iPhone/iPad a setup link first asks the user to add the Hub to the Home Screen: that app keeps its own
+ * storage, separate from Safari, so a device set up in a Safari tab would not carry over to the icon.
+ */
 export function Welcome() {
-  const [step, setStep] = useState<'code' | 'loading' | 'who'>('code')
+  const [step, setStep] = useState<'code' | 'checking' | 'install' | 'loading' | 'who'>('code')
   const [error, setError] = useState<string>()
   const [role, setRole] = useState<string>()
+  const [link, setLink] = useState<{ code: string; slot: SlotPayload }>()
+  const [guide, setGuide] = useState(false)
+  const inst = useInstall()
+  const iosTab = inst.platform === 'ios' && !inst.standalone
   const startSession = useHub((s) => s.startSession)
   const setPhase = useHub((s) => s.setPhase)
   const setLocal = useHub((s) => s.setLocal)
@@ -184,20 +213,24 @@ export function Welcome() {
   useEffect(() => {
     const code = claimSetupCode()
     if (!code) return
-    setStep('loading')
+    setStep('checking')
     void (async () => {
       const res = await fetchManifest()
       const slot = res ? await unlockSlot(res.manifest, code) : null
-      if (slot) await createAndLoad(code, slot)
-      else {
+      if (!slot) {
         setError(res ? 'This setup link is not valid any more. Ask your administrator for a new link or access code.' : 'Can’t reach the Hub. Connect to the internet once to set up this device.')
         setStep('code')
-      }
+      } else if (iosTab) {
+        setLink({ code, slot })
+        showSetupLinkInUrl(code)
+        setStep('install')
+      } else await createAndLoad(code, slot)
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const createAndLoad = async (code: string, slot: SlotPayload) => {
+    clearSetupLinkFromUrl()
     setRole(ROLE_LABEL[slot.role])
     setStep('loading')
     setError(undefined)
@@ -222,11 +255,55 @@ export function Welcome() {
     }
   }
 
+  const installFoot = inst.standalone ? undefined : (
+    <button className="btn btn-ghost btn-sm" onClick={() => setGuide(true)}><MonitorSmartphone /> Install the Hub as an app</button>
+  )
+  const dialog = <InstallDialog open={guide} onClose={() => setGuide(false)} />
+
   if (step === 'code') {
     return (
-      <GateFrame title="Editing & Editorial Hub" subtitle="Rota, work manual, contacts and blacklist — in one secure, offline hub." step={[1, 2]}>
+      <GateFrame title="Editing & Editorial Hub" subtitle="Rota, work manual, contacts and blacklist — in one secure, offline hub." step={[1, 2]} foot={installFoot}>
         {error && <div style={{ marginBottom: 14 }}><Notice tone="alert">{error}</Notice></div>}
+        {iosTab && (
+          <div style={{ marginBottom: 14 }}>
+            <Notice action={<button className="btn btn-sm" onClick={() => setGuide(true)}>How</button>}>
+              On {deviceNoun(inst.platform)}, add the Hub to your Home Screen first and enter the code there — the Home Screen app keeps its own data.
+            </Notice>
+          </div>
+        )}
         <AccessCodeForm onDone={(c, s) => void createAndLoad(c, s)} />
+        {dialog}
+      </GateFrame>
+    )
+  }
+  if (step === 'checking') {
+    return (
+      <GateFrame title="Editing & Editorial Hub" step={[1, 2]}>
+        <div className="col" style={{ alignItems: 'center', gap: 14, padding: '18px 0' }}>
+          <span className="spinner lg" />
+          <strong>Checking your setup link…</strong>
+        </div>
+      </GateFrame>
+    )
+  }
+  if (step === 'install' && link) {
+    const here = inst.browser === 'safari' ? 'Safari' : 'this browser'
+    return (
+      <GateFrame
+        title="Add the Hub to your Home Screen"
+        subtitle={<>Your link works. On {deviceNoun(inst.platform)} the Hub runs best from the Home Screen — its own icon, full screen and offline.</>}
+        step={[1, 2]}
+        foot={<button className="btn btn-ghost btn-sm" onClick={() => void createAndLoad(link.code, link.slot)}>Set up in {here} instead</button>}
+      >
+        <div className="col" style={{ gap: 20 }}>
+          <InstallSteps tab="ios" browser={inst.browser} />
+          <div className="col" style={{ gap: 8 }}>
+            <strong className="small">If the app asks for a code, enter this one</strong>
+            <CodeBox code={link.code} />
+            <span className="small muted">Tap Copy now, then paste it in the app. If the app opens already set up, there’s nothing to enter.</span>
+          </div>
+          <p className="tiny faint">Opened this link inside Teams, Outlook or WhatsApp? Open it in Safari first.</p>
+        </div>
       </GateFrame>
     )
   }

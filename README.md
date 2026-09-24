@@ -75,6 +75,9 @@ MBC APPS/                       ← private working folder (never committed)
 **Set up a device.** Tap the department setup link (or open the site and type the code), then pick your name. No PIN is needed unless you turn one on.
 The first run downloads roughly 25 MB of documents. Videos download when first played, or all at once from Settings → Offline status.
 
+**Install it as an app.** Home shows an *Install the Hub* banner until the Hub is installed. The same button is under Settings → Install app. Chrome and Edge install in one tap. Other browsers get step-by-step help for iPhone/iPad, Android and computers.
+On iPhone/iPad a setup link first shows *Add the Hub to your Home Screen*, because the Home Screen app keeps its own data, separate from Safari. That screen shows the code with a Copy button. The code box accepts a pasted setup link or a typed code.
+
 **Monthly rota: the simplest path (administrator, in the app)**
 1. Data Management → Import ROTA → select the Excel file → check the summary → Confirm.
 2. In-Charge comes from the yellow cells. Fix any warning on the duty board if needed.

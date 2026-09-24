@@ -13,6 +13,7 @@ import { openCellEditor } from '../rota/CellEditor'
 import { useNotices } from './notices'
 import { useSearchPalette } from '../search/SearchPalette'
 import type { Section } from '../../data/types'
+import { InstallBanner } from '../install/Install'
 import './home.css'
 
 function currentBand(sections: Section[], now = new Date()): string | undefined {
@@ -216,6 +217,7 @@ export function HomePage() {
           </div>
         </div>
       </header>
+      <InstallBanner />
       <div className="home-grid">
         <TodayCard />
         <Coverage />

@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import {
-  BookOpen, CalendarDays, Contact, Database, Download, Ellipsis, FileSpreadsheet, House, Lock, PanelLeftClose, PanelLeftOpen,
+  BookOpen, CalendarDays, Contact, Database, Download, Ellipsis, FileSpreadsheet, House, Lock, MonitorSmartphone, PanelLeftClose, PanelLeftOpen,
   Search, Settings, ShieldAlert, Upload,
 } from 'lucide-react'
 import { canSeeBlacklist, useHub, usePerms } from '../../data/store'
@@ -9,6 +9,7 @@ import { relativeDateTime } from '../../lib/dates'
 import { cx } from '../../ui/primitives'
 import { SearchPalette, useSearchPalette } from '../search/SearchPalette'
 import { useNotices } from '../home/notices'
+import { useInstall } from '../../lib/install'
 
 export function StatusPill({ compact }: { compact?: boolean }) {
   const net = useHub((s) => s.net)
@@ -179,6 +180,7 @@ export function MorePage() {
   const navigate = useNavigate()
   const lock = useHub((s) => s.lock)
   const pinOn = useHub((s) => s.pinOn)
+  const installed = useInstall().standalone
   const [items] = useState(() => [
     showBlacklist && { to: '/blacklist', icon: <ShieldAlert />, label: 'Blacklist', sub: 'Restricted names — handle with care', tone: 'alert' },
     perms.importRota && { to: '/rota/import', icon: <FileSpreadsheet />, label: 'Import ROTA', sub: 'Official Excel rota' },
@@ -186,6 +188,7 @@ export function MorePage() {
     perms.exportBackup && { to: '/admin/backup', icon: <Download />, label: 'Backup & Restore', sub: 'Encrypted .hub package' },
     (perms.admin || perms.importRota || perms.viewAudit) && { to: '/admin', icon: <Database />, label: 'Data & Integrity', sub: 'Staff, codes, audit, import history' },
     { to: '/settings', icon: <Settings />, label: 'Settings', sub: 'Display, security, offline status' },
+    !installed && { to: '/settings#app', icon: <MonitorSmartphone />, label: 'Install the app', sub: 'Home-screen icon, full screen, offline' },
   ].filter(Boolean) as { to: string; icon: ReactNode; label: string; sub: string; tone?: string }[])
   return (
     <div className="col" style={{ gap: 10 }}>

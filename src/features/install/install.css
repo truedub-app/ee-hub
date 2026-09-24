@@ -1,0 +1,44 @@
+.install-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; counter-reset: step; }
+.install-steps li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 12px; align-items: start; font-size: 0.9rem; line-height: 1.6; color: var(--text-2); }
+.install-steps li::before {
+  counter-increment: step; content: counter(step);
+  width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface)); color: var(--accent-2); font-weight: 650; font-size: 0.85rem;
+}
+.install-steps li > span { padding-top: 2px; }
+.install-steps strong { color: var(--text); font-weight: 600; }
+
+.ui-key {
+  display: inline-flex; align-items: center; gap: 4px; padding: 0 7px; min-height: 22px; border-radius: 6px;
+  border: 1px solid var(--line-2); background: var(--surface-2); color: var(--text); font-weight: 560; font-size: 0.85em;
+  white-space: nowrap; vertical-align: 1px;
+}
+.ui-key svg { width: 14px; height: 14px; }
+
+.install-banner {
+  display: flex; align-items: center; gap: 14px; padding: 14px 16px; margin-bottom: 16px; border-radius: var(--radius-lg);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line)); background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+}
+.install-banner.done { border-color: color-mix(in srgb, var(--qc2) 40%, var(--line)); background: color-mix(in srgb, var(--qc2) 8%, var(--surface)); }
+.install-banner strong { color: var(--text); }
+.install-icon {
+  width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; flex: none;
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface)); color: var(--accent-2);
+}
+.install-banner.done .install-icon { background: color-mix(in srgb, var(--qc2) 18%, var(--surface)); color: var(--qc2); }
+.install-icon svg { width: 20px; height: 20px; }
+.install-actions { display: flex; gap: 6px; flex: none; }
+@media (max-width: 767px) {
+  .install-banner { flex-wrap: wrap; margin-bottom: 12px; }
+  .install-banner > .grow { flex: 1 1 0; min-width: 0; }
+  .install-actions { flex-basis: 100%; }
+  .install-actions .btn { flex: 1; }
+}
+
+/* The code stays on one line; on a narrow phone the Copy button drops below it at full width. */
+.code-box {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--radius);
+  border: 1px dashed var(--line-strong); background: var(--surface-2);
+}
+.code-box .mono { flex: 100 0 auto; font-size: 1.05rem; letter-spacing: 0.04em; color: var(--text); white-space: nowrap; user-select: all; -webkit-user-select: all; }
+.code-box .btn { flex: 1 0 auto; }
