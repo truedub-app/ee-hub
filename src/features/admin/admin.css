@@ -1,0 +1,11 @@
+.admin-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.admin-tile { display: flex; align-items: flex-start; gap: 14px; padding: 16px; text-align: left; color: var(--text); transition: border-color var(--dur), transform var(--dur); }
+.admin-tile:hover { border-color: var(--line-strong); transform: translateY(-1px); }
+.admin-tile .t-icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 11px; flex: none; background: var(--accent-soft); color: var(--accent-2); }
+.admin-tile .t-icon svg { width: 20px; height: 20px; }
+.int-row { border-radius: 10px; }
+.int-head { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; border: 0; border-radius: 10px; background: color-mix(in srgb, var(--tone) 8%, transparent); color: var(--text); text-align: left; font-weight: 560; }
+.int-head > svg:first-child { color: var(--tone); width: 18px; height: 18px; flex: none; }
+.int-items { margin: 4px 0 8px; padding: 0 12px 0 40px; display: flex; flex-direction: column; gap: 4px; font-size: 0.84rem; color: var(--text-2); }
+.link-btn { border: 0; background: none; padding: 0; color: var(--accent-2); text-align: left; font: inherit; }
+.link-btn:hover { text-decoration: underline; }

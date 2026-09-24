@@ -1,0 +1,64 @@
+.home-hero { display: flex; align-items: flex-end; gap: 16px; margin-bottom: 20px; }
+.home-hero h1 { font-size: 1.9rem; letter-spacing: -0.02em; }
+.home-grid {
+  display: grid; gap: 16px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1fr);
+  grid-template-areas:
+    'today coverage notices'
+    'quick coverage recent';
+}
+.home-grid > :nth-child(1) { grid-area: today; }
+.home-grid > :nth-child(2) { grid-area: coverage; }
+.home-grid > :nth-child(3) { grid-area: notices; }
+.home-grid > :nth-child(4) { grid-area: quick; }
+.home-grid > :nth-child(5) { grid-area: recent; }
+@media (max-width: 1250px) {
+  .home-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: 'today notices' 'coverage coverage' 'quick recent'; }
+}
+@media (max-width: 767px) {
+  .home-hero h1 { font-size: 1.45rem; }
+  .home-grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'today' 'coverage' 'notices' 'quick' 'recent'; gap: 12px; }
+}
+
+.home-today { padding: 18px 18px 14px 22px; display: flex; flex-direction: column; gap: 6px; min-height: 220px; }
+.home-today .big { font-size: 1.55rem; font-weight: 680; letter-spacing: -0.02em; color: var(--text); }
+
+.coverage { display: flex; flex-direction: column; padding: 8px; gap: 6px; }
+.cov-row {
+  display: grid; grid-template-columns: 1fr auto; grid-template-areas: 'name count' 'hours count' 'duty duty';
+  gap: 2px 12px; padding: 12px 14px 12px 18px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2);
+  text-align: left; color: var(--text); position: relative; overflow: hidden;
+}
+.cov-row::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--tone); }
+.cov-row:hover { border-color: var(--line-strong); }
+.cov-row.now { border-color: color-mix(in srgb, var(--tone) 60%, transparent); background: color-mix(in srgb, var(--tone) 9%, var(--surface-2)); }
+.cov-name { grid-area: name; font-weight: 650; display: flex; align-items: center; gap: 8px; color: var(--tone); letter-spacing: 0.02em; }
+.cov-hours { grid-area: hours; font-size: 0.76rem; color: var(--text-3); }
+.cov-count { grid-area: count; align-self: center; font-size: 0.86rem; color: var(--text-2); text-align: right; font-variant-numeric: tabular-nums; }
+.cov-count strong { font-size: 1.3rem; color: var(--text); }
+.cov-count .abs { color: var(--warn); }
+.cov-duty { grid-area: duty; display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 6px; font-size: 0.8rem; }
+.cov-duty span { display: inline-flex; align-items: center; gap: 5px; }
+.cov-duty .ic { color: var(--incharge); }
+.cov-duty .qc { color: var(--qc2); }
+.cov-duty .missing { color: var(--alert); }
+
+.quick { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; padding: 12px; }
+.quick-btn {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px; min-height: 86px; border-radius: 12px;
+  border: 1px solid var(--line); background: var(--surface-2); color: var(--text); font-weight: 560; font-size: 0.85rem; text-align: left;
+  transition: border-color var(--dur), background var(--dur), transform var(--dur);
+}
+.quick-btn svg { width: 20px; height: 20px; color: var(--accent-2); }
+.quick-btn.tone-alert svg { color: var(--alert); }
+.quick-btn:hover { border-color: var(--line-strong); background: var(--surface-3); transform: translateY(-1px); }
+
+.recent-row { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 10px; border: 0; background: none; text-align: left; color: var(--text); }
+.recent-row:hover { background: var(--hover); }
+.recent-row .glyph { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 9px; flex: none; color: var(--tone); background: color-mix(in srgb, var(--tone) 15%, transparent); }
+
+.notices { list-style: none; margin: 0; padding: 8px; display: flex; flex-direction: column; gap: 4px; }
+.notice-row { display: flex; align-items: center; gap: 10px; padding: 8px 6px 8px 12px; border-radius: 10px; background: color-mix(in srgb, var(--tone) 8%, transparent); }
+.notice-row > svg { width: 17px; height: 17px; color: var(--tone); flex: none; }
+.notice-row > button.grow { border: 0; background: none; color: var(--text); text-align: left; font-size: 0.86rem; padding: 4px 0; }
+.notice-row > button.grow:hover { text-decoration: underline; }

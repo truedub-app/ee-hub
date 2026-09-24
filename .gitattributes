@@ -1,0 +1,7 @@
+# Source files: LF everywhere
+* text=auto eol=lf
+# Encrypted pack parts must never be touched by line-ending conversion
+*.bin binary
+public/pack/** -diff
+*.png binary
+*.webp binary

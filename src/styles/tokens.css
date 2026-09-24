@@ -1,0 +1,232 @@
+/* ------------------------------------------------------------------------------------------
+   Design tokens — broadcast-operations theme.
+   Dark navy/graphite foundation, yellow = In-Charge, green = QC 2, blue = navigation,
+   red/orange = alerts, absence and blacklist.
+------------------------------------------------------------------------------------------- */
+:root {
+  --font-sans: 'IBM Plex Sans', 'IBM Plex Sans Arabic', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-ar: 'IBM Plex Sans Arabic', 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  --text-scale: 1;
+
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  --sidebar-w: 256px;
+  --rail-w: 76px;
+  --topbar-h: 60px;
+  --bottombar-h: 64px;
+  --touch: 44px;
+
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --dur: 160ms;
+
+  /* ---- dark (default) ---- */
+  color-scheme: dark;
+  --bg: #070b16;
+  --bg-grad: radial-gradient(1200px 600px at 0% -10%, rgba(59, 130, 246, 0.10), transparent 60%),
+             radial-gradient(900px 500px at 110% 0%, rgba(236, 72, 153, 0.06), transparent 55%);
+  --panel: #0d1324;
+  --surface: #121a2f;
+  --surface-2: #172139;
+  --surface-3: #1e2a47;
+  --hover: rgba(148, 170, 220, 0.08);
+  --press: rgba(148, 170, 220, 0.14);
+  --line: #222d4a;
+  --line-2: #2d3a5e;
+  --line-strong: #3d4d78;
+  --text: #eef2fb;
+  --text-2: #b3bdd6;
+  --text-3: #7f8bab;
+  --text-inverse: #070b16;
+  --shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 10px 30px -12px rgba(0, 0, 0, 0.6);
+  --shadow-pop: 0 24px 60px -12px rgba(0, 0, 0, 0.75), 0 0 0 1px var(--line-2);
+  --scrim: rgba(3, 6, 14, 0.72);
+
+  --accent: #4f8cff;
+  --accent-2: #7aa8ff;
+  --accent-soft: rgba(79, 140, 255, 0.16);
+  --accent-line: rgba(79, 140, 255, 0.45);
+  --on-accent: #ffffff;
+
+  --incharge: #ffc53d;
+  --incharge-soft: rgba(255, 197, 61, 0.14);
+  --incharge-line: rgba(255, 197, 61, 0.5);
+  --qc2: #34d399;
+  --qc2-soft: rgba(52, 211, 153, 0.14);
+  --qc2-line: rgba(52, 211, 153, 0.5);
+  --alert: #ff5c6c;
+  --alert-soft: rgba(255, 92, 108, 0.14);
+  --alert-line: rgba(255, 92, 108, 0.5);
+  --warn: #ff9f43;
+  --warn-soft: rgba(255, 159, 67, 0.14);
+  --warn-line: rgba(255, 159, 67, 0.5);
+  --ok: #34d399;
+  --info: #60a5fa;
+
+  /* shift / status tones */
+  --c-morning: #4cc9f0;
+  --c-afternoon: #f472b6;
+  --c-night: #8b8cf8;
+  --c-graphics: #2dd4bf;
+  --c-off: #6b7796;
+  --c-hol: #ff9f43;
+  --c-toil: #fbbf77;
+  --c-sick: #ff5c6c;
+  --c-training: #60a5fa;
+  --c-remote: #94a3b8;
+  --c-unassigned: #5d6887;
+
+  /* manual categories */
+  --c-cat-editorial: #ffb454;
+  --c-cat-segmentation: #4cc9f0;
+  --c-cat-editing: #a78bfa;
+  --c-cat-walkthroughs: #f472b6;
+  --c-cat-workflow: #60a5fa;
+  --c-cat-qc: #34d399;
+  --c-cat-subtitling: #2dd4bf;
+  --c-cat-shahid: #22c55e;
+  --c-cat-compliance: #fb7185;
+  --c-cat-scheduling: #fb923c;
+  --c-cat-rules: #a3b1cc;
+
+  /* segmentation map categories (mirror the printed guide) */
+  --c-seg-movies: #86c06c;
+  --c-seg-western: #6fa8dc;
+  --c-seg-programs: #f6a26b;
+  --c-seg-drama: #b7b7b7;
+  --c-seg-kids: #f08a3c;
+  --c-seg-mbc3: #e8743b;
+  --c-seg-alarabiya: #f5c518;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg: #eef1f7;
+  --bg-grad: radial-gradient(1200px 600px at 0% -10%, rgba(59, 130, 246, 0.08), transparent 60%);
+  --panel: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #f4f6fb;
+  --surface-3: #e9edf6;
+  --hover: rgba(30, 50, 100, 0.06);
+  --press: rgba(30, 50, 100, 0.1);
+  --line: #dde3ef;
+  --line-2: #cbd3e4;
+  --line-strong: #a9b5cf;
+  --text: #0c1326;
+  --text-2: #3d4865;
+  --text-3: #66718f;
+  --text-inverse: #ffffff;
+  --shadow: 0 1px 2px rgba(16, 24, 48, 0.06), 0 8px 24px -12px rgba(16, 24, 48, 0.18);
+  --shadow-pop: 0 24px 60px -12px rgba(16, 24, 48, 0.35), 0 0 0 1px var(--line-2);
+  --scrim: rgba(12, 19, 38, 0.45);
+  --accent: #2563eb;
+  --accent-2: #1d4ed8;
+  --accent-soft: rgba(37, 99, 235, 0.1);
+  --accent-line: rgba(37, 99, 235, 0.4);
+  --incharge: #b7791f;
+  --incharge-soft: rgba(245, 180, 0, 0.16);
+  --incharge-line: rgba(183, 121, 31, 0.55);
+  --qc2: #0f9f6e;
+  --qc2-soft: rgba(16, 185, 129, 0.13);
+  --qc2-line: rgba(15, 159, 110, 0.5);
+  --alert: #dc2640;
+  --alert-soft: rgba(220, 38, 64, 0.1);
+  --alert-line: rgba(220, 38, 64, 0.45);
+  --warn: #d9660b;
+  --warn-soft: rgba(217, 102, 11, 0.12);
+  --warn-line: rgba(217, 102, 11, 0.45);
+  --c-morning: #0891b2;
+  --c-afternoon: #db2777;
+  --c-night: #4f46e5;
+  --c-graphics: #0d9488;
+  --c-off: #7a849e;
+  --c-hol: #d9660b;
+  --c-toil: #b45309;
+  --c-sick: #dc2640;
+  --c-cat-editorial: #b7791f;
+  --c-cat-segmentation: #0891b2;
+  --c-cat-editing: #7c3aed;
+  --c-cat-walkthroughs: #db2777;
+  --c-cat-workflow: #2563eb;
+  --c-cat-qc: #0f9f6e;
+  --c-cat-subtitling: #0d9488;
+  --c-cat-shahid: #15803d;
+  --c-cat-compliance: #e11d48;
+  --c-cat-scheduling: #ea580c;
+  --c-cat-rules: #64748b;
+}
+
+/* High contrast — stronger lines, pure text, no translucency */
+:root[data-contrast='high'] {
+  --bg: #000000;
+  --bg-grad: none;
+  --panel: #000000;
+  --surface: #05070d;
+  --surface-2: #0b0f1a;
+  --surface-3: #141a2b;
+  --line: #5a6a92;
+  --line-2: #8093c2;
+  --line-strong: #c8d4f0;
+  --text: #ffffff;
+  --text-2: #e5eaf7;
+  --text-3: #c3cbe0;
+  --accent: #7fb0ff;
+  --incharge: #ffd84d;
+  --qc2: #4dffb0;
+  --alert: #ff6b7a;
+}
+:root[data-theme='light'][data-contrast='high'] {
+  --bg: #ffffff;
+  --panel: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #f2f2f2;
+  --surface-3: #e6e6e6;
+  --line: #333333;
+  --line-2: #111111;
+  --line-strong: #000000;
+  --text: #000000;
+  --text-2: #111111;
+  --text-3: #333333;
+  --accent: #0033cc;
+}
+
+/* Tone helper: any element with .tone-x exposes --tone */
+.tone-morning { --tone: var(--c-morning); }
+.tone-afternoon { --tone: var(--c-afternoon); }
+.tone-night { --tone: var(--c-night); }
+.tone-graphics { --tone: var(--c-graphics); }
+.tone-off { --tone: var(--c-off); }
+.tone-hol { --tone: var(--c-hol); }
+.tone-toil { --tone: var(--c-toil); }
+.tone-sick { --tone: var(--c-sick); }
+.tone-training { --tone: var(--c-training); }
+.tone-remote { --tone: var(--c-remote); }
+.tone-unassigned { --tone: var(--c-unassigned); }
+.tone-qc2 { --tone: var(--qc2); }
+.tone-incharge { --tone: var(--incharge); }
+.tone-alert { --tone: var(--alert); }
+.tone-warn { --tone: var(--warn); }
+.tone-accent { --tone: var(--accent); }
+.tone-muted { --tone: var(--text-3); }
+.tone-cat-editorial { --tone: var(--c-cat-editorial); }
+.tone-cat-segmentation { --tone: var(--c-cat-segmentation); }
+.tone-cat-editing { --tone: var(--c-cat-editing); }
+.tone-cat-walkthroughs { --tone: var(--c-cat-walkthroughs); }
+.tone-cat-workflow { --tone: var(--c-cat-workflow); }
+.tone-cat-qc { --tone: var(--c-cat-qc); }
+.tone-cat-subtitling { --tone: var(--c-cat-subtitling); }
+.tone-cat-shahid { --tone: var(--c-cat-shahid); }
+.tone-cat-compliance { --tone: var(--c-cat-compliance); }
+.tone-cat-scheduling { --tone: var(--c-cat-scheduling); }
+.tone-cat-rules { --tone: var(--c-cat-rules); }
+.tone-seg-movies { --tone: var(--c-seg-movies); }
+.tone-seg-western { --tone: var(--c-seg-western); }
+.tone-seg-programs { --tone: var(--c-seg-programs); }
+.tone-seg-drama { --tone: var(--c-seg-drama); }
+.tone-seg-kids { --tone: var(--c-seg-kids); }
+.tone-seg-mbc3 { --tone: var(--c-seg-mbc3); }
+.tone-seg-alarabiya { --tone: var(--c-seg-alarabiya); }

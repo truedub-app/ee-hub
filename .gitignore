@@ -1,0 +1,40 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Department source material and secrets never belong in this repository.
+# Only the encrypted pack (public/pack/) is committed.
+secrets*.json
+*.hub
+*.xlsx
+*.xls
+*.docx
+*.pdf
+*.mp4
+hub-content/
+hub-build/
+
+# The encrypted pack is published on the gh-pages branch (the live site), not in main
+public/pack/
+.deploy/
