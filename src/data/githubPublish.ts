@@ -158,11 +158,25 @@ async function loadTarget(): Promise<GitTarget | undefined> {
 
 export type PublishStep = 'sync' | 'build' | 'upload' | 'site' | 'done'
 
+let publishing = false
+/** A publish is running on this device (only one at a time). */
+export const isPublishing = () => publishing
+
 /**
  * Publish this device's data to every device. First merges the latest published version (so nobody
  * else's publish is lost), then commits the new files, then waits until the site serves them.
  */
 export async function publishNow(onStep?: (step: PublishStep, detail?: string) => void): Promise<{ version: number; live: boolean }> {
+  if (publishing) throw new Error('Already publishing — this device’s changes are on their way')
+  publishing = true
+  try {
+    return await publishOnce(onStep)
+  } finally {
+    publishing = false
+  }
+}
+
+async function publishOnce(onStep?: (step: PublishStep, detail?: string) => void): Promise<{ version: number; live: boolean }> {
   const s = useHub.getState()
   const target = await loadTarget()
   if (!target) throw new Error('One-click publishing is not set up on this device')

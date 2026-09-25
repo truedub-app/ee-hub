@@ -9,7 +9,17 @@ import { Badge, Field, Modal, Notice, Progress } from '../../ui/primitives'
 import { confirmDialog, toast } from '../../ui/toast'
 import '../install/install.css'
 
-const TOKEN_PAGE = 'https://github.com/settings/personal-access-tokens/new'
+/** GitHub's new-token page with everything pre-filled except the repository (GitHub can't pre-select that). */
+function tokenPageUrl(owner: string): string {
+  const q = new URLSearchParams({
+    name: 'EE Hub publishing',
+    description: 'Lets the Editing & Editorial Hub publish rota and data updates to its site',
+    target_name: owner,
+    expires_in: 'none',
+    contents: 'write',
+  })
+  return `https://github.com/settings/personal-access-tokens/new?${q}`
+}
 
 /** Changes made on this device that other devices don't have yet. */
 export function useUnpublished(): boolean {
@@ -33,7 +43,7 @@ export function PublisherSetup({ onClose, onSaved }: { onClose: () => void; onSa
       const t = { repo: repo.trim(), branch: 'gh-pages', token: token.trim() }
       const { login } = await verifyTarget(t)
       await savePublisher(t, login)
-      toast('One-click publishing is on for this device')
+      toast('Connected — changes from this device now reach every device automatically')
       onSaved?.()
       onClose()
     } catch (e) {
@@ -46,7 +56,7 @@ export function PublisherSetup({ onClose, onSaved }: { onClose: () => void; onSa
     <Modal
       open
       onClose={onClose}
-      title="Set up one-click publishing"
+      title="Connect automatic publishing"
       footer={
         <>
           <button className="btn" onClick={onClose}>Cancel</button>
@@ -58,13 +68,11 @@ export function PublisherSetup({ onClose, onSaved }: { onClose: () => void; onSa
     >
       <div className="col" style={{ gap: 16 }}>
         <p className="small muted">
-          Publishing needs a GitHub key (a “fine-grained token”) that may update this site. You create it once on GitHub — signed in as <strong>{owner}</strong> — and paste it here.
+          The site lives on GitHub, and GitHub only accepts changes from someone holding a key for it — that is what stops anyone else from changing the rota. Connect once; after that every change you make here reaches all devices by itself.
         </p>
         <ol className="install-steps">
-          <li><span>Open <a href={TOKEN_PAGE} target="_blank" rel="noopener noreferrer">GitHub → new fine-grained token <ExternalLink width={13} style={{ verticalAlign: -1 }} /></a>.</span></li>
-          <li><span><strong>Token name:</strong> EE Hub publishing. <strong>Expiration:</strong> 1 year (or longer if offered). <strong>Resource owner:</strong> {owner}.</span></li>
-          <li><span><strong>Repository access:</strong> Only select repositories → <strong>{name || 'the site repository'}</strong>.</span></li>
-          <li><span><strong>Permissions</strong> → Repository permissions → <strong>Contents: Read and write</strong>. Nothing else is needed.</span></li>
+          <li><span>Open <a href={tokenPageUrl(owner)} target="_blank" rel="noopener noreferrer">GitHub’s new-key page <ExternalLink width={13} style={{ verticalAlign: -1 }} /></a> (signed in as <strong>{owner}</strong>). The name, owner, “no expiration” and the <strong>Contents: Read and write</strong> permission are already filled in.</span></li>
+          <li><span>Under <strong>Repository access</strong>, choose <strong>Only select repositories</strong> → <strong>{name || 'the site repository'}</strong>.</span></li>
           <li><span>Click <strong>Generate token</strong>, copy it, and paste it below.</span></li>
         </ol>
         <div className="form-grid">
@@ -175,7 +183,11 @@ export function PublishCard() {
       </div>
       <div className="card-body col" style={{ gap: 14 }}>
         {unpublished ? (
-          <Notice tone="warn">This device has changes that other devices don’t have yet{s.local.editedAt ? ` (last change ${relativeDateTime(s.local.editedAt)})` : ''}.</Notice>
+          publisher ? (
+            <Notice>Changes from this device are on their way to every device (last change {relativeDateTime(s.local.editedAt!)}).</Notice>
+          ) : (
+            <Notice tone="warn">This device has changes that other devices don’t have yet{s.local.editedAt ? ` (last change ${relativeDateTime(s.local.editedAt)})` : ''}.</Notice>
+          )
         ) : s.local.publishedAt ? (
           <Notice tone="qc2" icon={<CircleCheck />}>Everything on this device is published — data version {s.local.publishedVersion}, {dateTime(s.local.publishedAt)}.</Notice>
         ) : null}
@@ -183,8 +195,8 @@ export function PublishCard() {
         {publisher ? (
           <>
             <p className="small muted">
-              One-click publishing is on: this device sends its data straight to <span className="mono">{publisher.repo}</span>
-              {publisher.login ? <> as <strong>{publisher.login}</strong></> : null}. Rota imports publish automatically.
+              Automatic publishing is on: every change made on this device — rota imports, duties, staff, documents, the blacklist — is sent to all devices within a minute, through <span className="mono">{publisher.repo}</span>
+              {publisher.login ? <> as <strong>{publisher.login}</strong></> : null}.
             </p>
             <div className="row-wrap">
               <button className="btn btn-primary" disabled={running || !s.manifest} onClick={() => void run()}>
@@ -195,9 +207,9 @@ export function PublishCard() {
                 className="btn btn-ghost btn-sm"
                 disabled={running}
                 onClick={async () => {
-                  if (await confirmDialog({ title: 'Turn off one-click publishing?', body: 'The GitHub token is erased from this device. You can set it up again at any time.', confirm: 'Turn off' })) {
+                  if (await confirmDialog({ title: 'Turn off automatic publishing?', body: 'The GitHub key is erased from this device. Changes made here will stay on this device until you connect again.', confirm: 'Turn off' })) {
                     await removePublisher()
-                    toast('One-click publishing turned off on this device')
+                    toast('Automatic publishing turned off on this device')
                   }
                 }}
               >
@@ -209,9 +221,9 @@ export function PublishCard() {
         ) : (
           <>
             <p className="small muted">
-              Set up one-click publishing once, and everything you change here — a new rota, duties, staff, documents, the blacklist — reaches every device with one button. Rota imports then publish automatically.
+              Connect this device to the site once, and everything you change here — a new rota, duties, staff, documents, the blacklist — reaches every device by itself. No publish button, no files to upload.
             </p>
-            <div><button className="btn btn-primary" onClick={() => setSetup(true)}><KeyRound /> Set up one-click publishing</button></div>
+            <div><button className="btn btn-primary" onClick={() => setSetup(true)}><KeyRound /> Connect automatic publishing</button></div>
           </>
         )}
 

@@ -78,31 +78,35 @@ The first run downloads roughly 25 MB of documents. Videos download when first p
 **Install it as an app.** Home shows an *Install the Hub* banner until the Hub is installed. The same button is under Settings → Install app. Chrome and Edge install in one tap. Other browsers get step-by-step help for iPhone/iPad, Android and computers.
 On iPhone/iPad a setup link first shows *Add the Hub to your Home Screen*, because the Home Screen app keeps its own data, separate from Safari. That screen shows the code with a Copy button. The code box accepts a pasted setup link or a typed code.
 
-**One-click publishing (administrator, once per device).** Data Management → Backup, restore & publish → **Set up
-one-click publishing**. Follow the steps shown to create a GitHub *fine-grained token*:
-- repository: this site only
-- permission: *Contents: Read and write*
-- paste it in the app
+**Automatic publishing (administrator, once per device).** The site is hosted on GitHub, and GitHub accepts
+changes only from someone with a key. This is what stops anyone else from changing the rota.
+1. Go to Data Management → Backup, restore & publish → **Connect automatic publishing**.
+2. The link opens GitHub's new-key page with the name, owner, "no expiration" and *Contents: Read and write* filled
+   in. Choose **Only select repositories → ee-hub**, press **Generate token** and paste the key into the app.
 
-The token is stored encrypted on that device only. It is never published and never included in a backup. After that:
-- **Publish now** sends the device's data to every device.
-- Rota imports publish automatically.
-- Home warns an administrator when their device has changes that other devices don't have yet.
+The key stays encrypted on that device only. It is never published and never included in a backup. From then on, every change
+made on that device reaches all devices by itself, with no button to press:
+- rota uploads
+- duty board edits
+- staff and contacts
+- documents
+- the blacklist
 
-Other devices check for a new version when they open, when the Hub comes back to the screen, and every 5 minutes.
+Edits are grouped and sent about 20 seconds after they stop. Home warns only if sending stalls. Other devices
+check for a new version when they open, when the Hub comes back to the screen, and every 5 minutes.
 
 **Monthly rota (administrator, in the app)**
 1. Data Management → Import ROTA → select the Excel file → check the summary → Confirm.
-2. With one-click publishing set up, the new rota goes to every device straight away. The last screen of the import
-   shows the progress.
-3. In-Charge comes from the yellow cells. If you fix a warning on the duty board, press **Publish now** afterwards.
+2. With automatic publishing connected, the new rota goes to every device straight away. The last screen of the
+   import shows the progress.
+3. In-Charge comes from the yellow cells. Fixes on the duty board are sent automatically too.
 
 Each day's shift comes from the time written in the cell: `08 till 16 00` is Morning, `16 00 till 00 00` is Afternoon
 and `00 00 till 08 00` is Night. This applies even when the person is listed in another shift's table. Other times go
 to the shift they overlap most, and the app keeps and shows the actual hours (for example `07 till 15 00` is Morning,
 07:00–15:00). The week and month tables group each person by the shift they work most in the days shown.
 
-Without one-click publishing, use **Or publish by hand with a zip file** on the same page. Then, on GitHub:
+Without automatic publishing, use **Or publish by hand with a zip file** on the same page. Then, on GitHub:
 1. Switch to the **gh-pages** branch and open `pack/`.
 2. Choose **Add file → Upload files** and drag in the contents of the zip's `pack` folder.
 3. Commit.

@@ -20,6 +20,7 @@ import { AuditLog, ImportHistory } from './features/admin/History'
 import { BackupPage } from './features/admin/BackupPage'
 import { DocumentsAdmin } from './features/admin/DocumentsAdmin'
 import { ConfirmHost, Toaster, toast } from './ui/toast'
+import { useAutoPublish } from './data/autoPublish'
 import './features/admin/admin.css'
 
 function useTheme() {
@@ -80,6 +81,7 @@ function useBoot() {
 }
 
 function Ready() {
+  useAutoPublish()
   useEffect(() => {
     void warmEssentials()
     const check = () => {

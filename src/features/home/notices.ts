@@ -25,9 +25,10 @@ export function useNotices(): HubNotice[] {
     const idx = rotaIndex(ctx)
     const last = idx.dates[idx.dates.length - 1]
 
-    // an administrator's changes reach other devices only when published
+    // an administrator's changes reach other devices only when published (automatically once connected)
     if (perms.admin && local.editedAt && local.editedAt > (local.publishedAt ?? 0)) {
-      out.push({ id: `unpublished-${local.editedAt}`, tone: 'alert', area: 'data', text: 'Changes on this device are not on other devices yet — publish them', to: '/admin/backup#publish' })
+      if (!local.publisher) out.push({ id: `unpublished-${local.editedAt}`, tone: 'alert', area: 'data', text: 'Changes on this device are not on other devices yet — connect automatic publishing', to: '/admin/backup#publish' })
+      else if (Date.now() - local.editedAt > 3 * 60_000) out.push({ id: `unsent-${local.editedAt}`, tone: 'alert', area: 'data', text: 'Changes on this device haven’t reached other devices yet — check the connection', to: '/admin/backup#publish' })
     }
 
     const lastImport = live(data.imports).filter((i) => i.kind === 'rota' && !i.rolledBack).sort((a, b) => b.importedAt - a.importedAt)[0]
@@ -67,5 +68,5 @@ export function useNotices(): HubNotice[] {
       if (!lb || Date.now() - lb > 30 * 86_400_000) out.push({ id: 'backup', tone: 'info', area: 'backup', text: lb ? `Last backup ${ago(lb)}` : 'No backup exported from this device yet', to: '/admin/backup' })
     }
     return out.filter((n) => !local.dismissed.includes(n.id))
-  }, [data, blacklist, sheets, local.dismissed, local.hideBlacklist, local.lastBackupAt, local.editedAt, local.publishedAt, perms])
+  }, [data, blacklist, sheets, local.dismissed, local.hideBlacklist, local.lastBackupAt, local.editedAt, local.publishedAt, local.publisher, perms])
 }

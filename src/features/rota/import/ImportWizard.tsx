@@ -405,7 +405,7 @@ export function ImportWizard() {
               </>
             ) : perms.admin ? (
               <Notice tone="warn" action={<button className="btn btn-sm" onClick={() => setSetupPublishing(true)}><KeyRound /> Set up</button>}>
-                <strong>Only this device has the new rota so far.</strong> Set up one-click publishing once — this rota is then sent to every device, and future imports go out automatically.
+                <strong>Only this device has the new rota so far.</strong> Connect automatic publishing once — this rota is then sent to every device, and every future upload goes out by itself.
               </Notice>
             ) : (
               <Notice tone="warn">Only this device has the new rota so far. Ask an administrator to publish it to every device.</Notice>
