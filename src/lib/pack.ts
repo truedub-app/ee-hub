@@ -7,7 +7,8 @@ import type { KeyName, PackFileEntry, PackIndex, PackManifest, SlotPayload } fro
 
 const CACHE = 'ee-hub-pack-v1'
 const base = () => new URL('pack/', new URL(import.meta.env.BASE_URL, location.href)).href
-const url = (rel: string) => new URL(rel, base()).href
+/** Absolute address of a file in the published pack. */
+export const url = (rel: string) => new URL(rel, base()).href
 
 export interface PackKeys {
   core: CryptoKey

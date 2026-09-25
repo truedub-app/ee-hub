@@ -213,7 +213,7 @@ export function SettingsPage() {
           </div>
           {dl && <div className="col" style={{ gap: 4 }}><span className="small muted">Downloading {dl.label}… {Math.round(dl.p * 100)}%</span><Progress value={dl.p} /></div>}
         </div>
-        <p className="tiny faint">Each device keeps its own encrypted copy. When a network is available the Hub fetches the latest published version automatically; everything keeps working when the studio network is down.</p>
+        <p className="tiny faint">Each device keeps its own encrypted copy. When a network is available the Hub checks for a newer published version when it opens, when it comes back to the screen and every few minutes; everything keeps working when the studio network is down.</p>
       </Section>
 
       <InstallSection />

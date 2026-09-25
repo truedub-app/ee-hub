@@ -25,6 +25,11 @@ export function useNotices(): HubNotice[] {
     const idx = rotaIndex(ctx)
     const last = idx.dates[idx.dates.length - 1]
 
+    // an administrator's changes reach other devices only when published
+    if (perms.admin && local.editedAt && local.editedAt > (local.publishedAt ?? 0)) {
+      out.push({ id: `unpublished-${local.editedAt}`, tone: 'alert', area: 'data', text: 'Changes on this device are not on other devices yet — publish them', to: '/admin/backup#publish' })
+    }
+
     const lastImport = live(data.imports).filter((i) => i.kind === 'rota' && !i.rolledBack).sort((a, b) => b.importedAt - a.importedAt)[0]
     if (lastImport) out.push({ id: `imp-${lastImport.id}`, tone: 'info', area: 'data', text: `Rota imported ${ago(lastImport.importedAt)} — ${lastImport.fileName}`, to: '/admin/imports' })
 
@@ -62,5 +67,5 @@ export function useNotices(): HubNotice[] {
       if (!lb || Date.now() - lb > 30 * 86_400_000) out.push({ id: 'backup', tone: 'info', area: 'backup', text: lb ? `Last backup ${ago(lb)}` : 'No backup exported from this device yet', to: '/admin/backup' })
     }
     return out.filter((n) => !local.dismissed.includes(n.id))
-  }, [data, blacklist, sheets, local.dismissed, local.hideBlacklist, local.lastBackupAt, perms])
+  }, [data, blacklist, sheets, local.dismissed, local.hideBlacklist, local.lastBackupAt, local.editedAt, local.publishedAt, perms])
 }

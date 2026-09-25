@@ -39,6 +39,13 @@ export interface LocalState {
   lastDataSource?: string
   dismissed: string[]
   graphicsSection: boolean
+  /** Last change made on this device (rota import, edits, blacklist) — compared with publishedAt. */
+  editedAt?: number
+  /** Last time this device published to every device, and which data version that was. */
+  publishedAt?: number
+  publishedVersion?: number
+  /** One-click publishing is set up on this device (the token itself is kept separately, encrypted). */
+  publisher?: { repo: string; branch: string; login?: string; savedAt: number }
 }
 
 export const DEFAULT_LOCAL: LocalState = {
@@ -113,6 +120,8 @@ interface HubState {
 }
 
 // ---- persistence (debounced, sealed) -------------------------------------------------------------
+const edited = (s: { local: LocalState }) => ({ local: { ...s.local, editedAt: Date.now() } })
+
 const timers: Record<string, ReturnType<typeof setTimeout>> = {}
 function persist(key: 'data' | 'restricted' | 'local' | 'localFiles') {
   clearTimeout(timers[key])
@@ -189,9 +198,10 @@ export const useHub = create<HubState>()((set, get) => ({
     set((s) => {
       const map = new Map((s.data[key] as RecordMeta[]).map((r) => [r.id, r]))
       for (const it of items as RecordMeta[]) map.set(it.id, { ...it, updatedAt: it.updatedAt || Date.now(), updatedBy: it.updatedBy ?? actor })
-      return { data: { ...s.data, [key]: [...map.values()] } }
+      return { data: { ...s.data, [key]: [...map.values()] }, ...edited(s) }
     })
     persist('data')
+    persist('local')
   },
 
   remove(key, ids) {
@@ -202,8 +212,10 @@ export const useHub = create<HubState>()((set, get) => ({
         ...s.data,
         [key]: (s.data[key] as RecordMeta[]).map((r) => (ids.includes(r.id) ? { ...r, deleted: true, updatedAt: now, updatedBy: actor } : r)),
       },
+      ...edited(s),
     }))
     persist('data')
+    persist('local')
   },
 
   setSheetsAll(list) {
@@ -215,18 +227,20 @@ export const useHub = create<HubState>()((set, get) => ({
     set((s) => {
       const map = new Map(s.sheets.map((r) => [r.id, r]))
       for (const it of items) map.set(it.id, it)
-      return { sheets: [...map.values()] }
+      return { sheets: [...map.values()], ...edited(s) }
     })
     persist('restricted')
+    persist('local')
   },
 
   upsertBlacklist(items) {
     set((s) => {
       const map = new Map(s.blacklist.map((r) => [r.id, r]))
       for (const it of items) map.set(it.id, it)
-      return { blacklist: [...map.values()] }
+      return { blacklist: [...map.values()], ...edited(s) }
     })
     persist('restricted')
+    persist('local')
   },
 
   setLocal(patch) {
@@ -245,8 +259,9 @@ export const useHub = create<HubState>()((set, get) => ({
   setContent: (id, c) => set((s) => ({ contents: { ...s.contents, [id]: c } })),
 
   addLocalFiles(files) {
-    set((s) => ({ localFiles: { ...s.localFiles, ...files } }))
+    set((s) => ({ localFiles: { ...s.localFiles, ...files }, ...edited(s) }))
     persist('localFiles')
+    persist('local')
   },
 
   audit(action, target, detail) {

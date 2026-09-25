@@ -50,14 +50,25 @@ function main() {
     git(['rm', '-rf', '--quiet', '.'], WT)
   }
 
-  for (const f of readdirSync(WT)) if (f !== '.git') rmSync(path.join(WT, f), { recursive: true, force: true })
-  cpSync(DIST, WT, { recursive: true })
+  // Administrators publish data straight from the app. Never replace a newer live pack with an older local one:
+  // deploy the app and keep the live data (run `npm run pack` first to merge it into the local pack).
+  const versionOf = (dir: string) => {
+    const f = path.join(dir, 'pack', 'manifest.json')
+    return existsSync(f) ? (JSON.parse(readFileSync(f, 'utf8')) as { version: number }).version : 0
+  }
+  const live = versionOf(WT)
+  const local = versionOf(DIST)
+  const keepLivePack = live > local
+  if (keepLivePack) log(`The live data (v${live}) is newer than the local pack (v${local}) — deploying the app only and keeping the live data. Run \`npm run pack\` to merge it locally.`)
+
+  for (const f of readdirSync(WT)) if (f !== '.git' && !(keepLivePack && f === 'pack')) rmSync(path.join(WT, f), { recursive: true, force: true })
+  for (const f of readdirSync(DIST)) if (!(keepLivePack && f === 'pack')) cpSync(path.join(DIST, f), path.join(WT, f), { recursive: true })
   git(['add', '-A'], WT)
   const changed = git(['status', '--porcelain'], WT)
   if (!changed) {
     log('Nothing changed — the live site is already up to date')
   } else {
-    const manifest = JSON.parse(readFileSync(path.join(DIST, 'pack', 'manifest.json'), 'utf8'))
+    const manifest = JSON.parse(readFileSync(path.join(keepLivePack ? WT : DIST, 'pack', 'manifest.json'), 'utf8'))
     const commit = git(['rev-parse', '--short', 'HEAD'])
     git(['commit', '-q', '-m', `Deploy app ${commit} with data version ${manifest.version}`], WT)
     log('Pushing to GitHub …')

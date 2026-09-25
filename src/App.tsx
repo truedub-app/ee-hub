@@ -82,12 +82,20 @@ function useBoot() {
 function Ready() {
   useEffect(() => {
     void warmEssentials()
-    // periodic update check while the app is open
-    const t = setInterval(() => {
+    const check = () => {
       if (navigator.onLine) void syncPack().then((r) => r.status === 'updated' && toast(r.message))
-    }, 15 * 60_000)
+    }
+    // periodic update check while the app is open (the manifest is under 1 KB)
+    const t = setInterval(check, 5 * 60_000)
+    // …and when the Hub comes back to the screen, e.g. a phone app reopened from the background
+    const onVisible = () => {
+      const last = useHub.getState().net.lastCheck ?? 0
+      if (document.visibilityState === 'visible' && Date.now() - last > 60_000) check()
+    }
+    document.addEventListener('visibilitychange', onVisible)
     return () => {
       clearInterval(t)
+      document.removeEventListener('visibilitychange', onVisible)
       clearUrlCache()
     }
   }, [])

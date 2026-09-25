@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, CircleCheck, FileSpreadsheet, Info, TriangleAlert, Undo2, Upload } from 'lucide-react'
+import { ArrowLeft, ArrowRight, CircleCheck, CloudUpload, FileSpreadsheet, Info, KeyRound, RotateCcw, TriangleAlert, Undo2, Upload } from 'lucide-react'
 import type { WorkBook } from 'xlsx'
 import { useHub, usePerms } from '../../../data/store'
 import type { ImportRecord } from '../../../data/types'
@@ -12,6 +12,7 @@ import { toast } from '../../../ui/toast'
 import { PageHead } from '../../shell/Shell'
 import { applyPlan, buildPlan, colName, defaultDecision, detectLayout, planDays, type ColumnRole, type Grid, type Layout, type NameDecision } from './parseRota'
 import { rollbackImport } from './rollback'
+import { PublishProgress, PublisherSetup, usePublishRunner } from '../../admin/PublishPanel'
 import '../rota.css'
 
 type Step = 'file' | 'map' | 'preview' | 'done'
@@ -58,6 +59,10 @@ export function ImportWizard() {
   const [result, setResult] = useState<ImportRecord>()
   const inputRef = useRef<HTMLInputElement>(null)
   const [drag, setDrag] = useState(false)
+  // after an import, send it to every device straight away (one-click publishing)
+  const publisher = useHub((s) => s.local.publisher)
+  const pub = usePublishRunner()
+  const [setupPublishing, setSetupPublishing] = useState(false)
 
   const sections = data.sections.filter((s) => !s.deleted)
   const codes = data.shiftCodes.filter((c) => !c.deleted)
@@ -151,6 +156,7 @@ export function ImportWizard() {
     st.audit('rota.import', fileName, `${res.counts.created + res.counts.updated} cells updated, ${res.counts.newStaff} new staff`)
     setResult(record)
     setStep('done')
+    if (perms.admin && st.local.publisher) void pub.run()
   }
 
   // ---------------------------------------------------------------------------------------
@@ -390,6 +396,22 @@ export function ImportWizard() {
             {result.stats.created + result.stats.updated} cells updated ({result.stats.created} new, {result.stats.updated} changed, {result.stats.unchanged} unchanged)
             {result.stats.newStaff ? ` · ${plural(result.stats.newStaff, 'new staff record')}` : ''} · imported by {result.importedBy}.
           </p>
+          <div className="col" style={{ gap: 10, width: '100%', maxWidth: 620 }}>
+            <strong className="row" style={{ gap: 8 }}><CloudUpload width={18} style={{ color: 'var(--accent-2)' }} /> Every device</strong>
+            {perms.admin && publisher ? (
+              <>
+                <PublishProgress state={pub.state} />
+                {pub.state.error && <div><button className="btn btn-sm" onClick={() => void pub.run()}><RotateCcw /> Try again</button></div>}
+              </>
+            ) : perms.admin ? (
+              <Notice tone="warn" action={<button className="btn btn-sm" onClick={() => setSetupPublishing(true)}><KeyRound /> Set up</button>}>
+                <strong>Only this device has the new rota so far.</strong> Set up one-click publishing once — this rota is then sent to every device, and future imports go out automatically.
+              </Notice>
+            ) : (
+              <Notice tone="warn">Only this device has the new rota so far. Ask an administrator to publish it to every device.</Notice>
+            )}
+          </div>
+          {setupPublishing && <PublisherSetup onClose={() => setSetupPublishing(false)} onSaved={() => void pub.run()} />}
           <div className="row-wrap">
             <button className="btn btn-primary" onClick={() => navigate(`/rota?date=${result.period?.from ?? ''}`)}>View rota</button>
             <button className="btn" onClick={() => navigate('/admin/imports')}>Import history</button>

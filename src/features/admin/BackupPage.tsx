@@ -1,13 +1,13 @@
 import { useRef, useState } from 'react'
-import { Download, FolderOpen, PackageCheck, ShieldCheck, Upload, CloudUpload } from 'lucide-react'
+import { Download, FolderOpen, PackageCheck, ShieldCheck, Upload } from 'lucide-react'
 import { useHub, usePerms } from '../../data/store'
 import { backupFileName, decodeBackup, downloadBytes, encodeBackup, type BackupPayload } from '../../data/backup'
 import { mergeBlacklist, mergeData, mergeList, emptyData, live } from '../../data/merge'
 import { carryFiles, referencedLocalFileIds, restoreFiles } from '../../data/localFiles'
-import { buildPublishZip } from '../../data/publish'
+import { PublishCard } from './PublishPanel'
 import { dateTime } from '../../lib/dates'
 import { formatBytes, plural } from '../../lib/text'
-import { Badge, Empty, Field, Notice, Segmented, Switch } from '../../ui/primitives'
+import { Empty, Field, Notice, Segmented, Switch } from '../../ui/primitives'
 import { confirmDialog, toast } from '../../ui/toast'
 import { PageHead } from '../shell/Shell'
 
@@ -80,6 +80,7 @@ export function BackupPage() {
     const base = mode === 'replace' ? emptyData() : s.data
     const merged = mergeData(base, preview.data)
     s.setData(merged.data, `Backup ${file?.name}`)
+    s.setLocal({ editedAt: Date.now() })
     if (preview.blacklist && s.session?.keys.restricted) {
       s.setBlacklistAll(mode === 'replace' ? preview.blacklist : mergeBlacklist(s.blacklist, preview.blacklist).list)
       if (preview.sheets) s.setSheetsAll(mode === 'replace' ? preview.sheets : mergeList(s.sheets, preview.sheets))
@@ -95,29 +96,10 @@ export function BackupPage() {
     setRpass('')
   }
 
-  const doPublish = async () => {
-    if (!(await confirmDialog({
-      title: 'Publish this device’s data?',
-      body: 'Creates the next encrypted data version from this device (rota, duties, staff, contacts, documents and blacklist). Upload the zip to the repository to roll it out to every device.',
-      confirm: 'Create publish package',
-    }))) return
-    setBusy(true)
-    try {
-      const r = await buildPublishZip()
-      downloadBytes(r.zip as Uint8Array<ArrayBuffer>, `hub-pack-v${r.version}.zip`, 'application/zip')
-      s.audit('pack.publish', `v${r.version}`, `${r.files} files`)
-      toast(`Publish package v${r.version} created`)
-    } catch (e) {
-      toast(e instanceof Error ? e.message : String(e), 'alert')
-    } finally {
-      setBusy(false)
-    }
-  }
-
   const st = strength(pass)
   return (
     <div className="col" style={{ gap: 18, maxWidth: 900 }}>
-      <PageHead title="Backup, restore & publish" sub="Move data between devices without the internet, and publish the department’s single source of truth." />
+      <PageHead title="Backup, restore & publish" sub="Publish this device’s data to every device, or move data between devices without the internet." />
 
       <section className="card">
         <div className="card-head"><Download width={18} style={{ color: 'var(--accent-2)' }} /><h2>Export encrypted backup</h2><span className="spacer" />{s.local.lastBackupAt && <span className="small muted">Last: {dateTime(s.local.lastBackupAt)}</span>}</div>
@@ -166,15 +148,7 @@ export function BackupPage() {
         </div>
       </section>
 
-      {perms.admin && (
-        <section className="card">
-          <div className="card-head"><CloudUpload width={18} style={{ color: 'var(--accent-2)' }} /><h2>Publish to all devices</h2><span className="spacer" /><Badge tone="muted">Current: v{s.manifest?.version ?? '—'}</Badge></div>
-          <div className="card-body col" style={{ gap: 12 }}>
-            <p className="small muted">Package this device’s data as data version {Math.max(s.manifest?.version ?? 0, s.local.packVersion ?? 0) + 1}. On GitHub, open the <span className="mono">gh-pages</span> branch → <span className="mono">pack</span> folder → Add file → Upload files, and drag in the contents of the zip’s <span className="mono">pack</span> folder. The site updates within a minute and every device picks it up the next time it is online. Everything stays encrypted; the access codes do not change.</p>
-            <div><button className="btn btn-primary" onClick={() => void doPublish()} disabled={busy || !s.manifest}><PackageCheck /> Create publish package</button></div>
-          </div>
-        </section>
-      )}
+      {perms.admin && <PublishCard />}
     </div>
   )
 }
