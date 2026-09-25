@@ -25,7 +25,7 @@ export function RotaGrid({ days, filter, compact, meId, onlyStaff, highlight, qu
   const t = today()
   const wrapRef = useRef<HTMLDivElement>(null)
   const groups = useMemo(() => {
-    const bySec = staffBySection(ctx)
+    const bySec = staffBySection(ctx, days, ctx.idx)
     const q = fold(query ?? '')
     return ctx.sections
       .filter((s) => filter.sections.length === 0 || filter.sections.includes(s.id))
@@ -34,7 +34,7 @@ export function RotaGrid({ days, filter, compact, meId, onlyStaff, highlight, qu
         staff: (bySec.get(s.id) ?? []).filter((st) => (!onlyStaff || onlyStaff.includes(st.id)) && (!q || fold(st.name).includes(q))),
       }))
       .filter((g) => g.staff.length > 0 || (!onlyStaff && !q))
-  }, [ctx, filter.sections, onlyStaff, query])
+  }, [ctx, days, filter.sections, onlyStaff, query])
 
   // scroll today / highlighted row into view
   useEffect(() => {

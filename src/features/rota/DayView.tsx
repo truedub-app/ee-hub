@@ -89,7 +89,6 @@ function ShiftCard({ p, band, date, me, dim }: { p: Person; band: BandDay; date:
   const ctx = useRotaCtx()
   const perms = usePerms()
   const code = p.a ? ctx.idx.codes.get(p.a.code) : undefined
-  const home = ctx.sections.find((s) => s.id === p.staff.section)
   const ic = band.inCharge?.id === p.staff.id
   const qc = band.qc2?.id === p.staff.id || p.a?.code === 'Q'
   const hours = hoursOf(ctx.idx, ctx.sections, p.a)
@@ -100,7 +99,7 @@ function ShiftCard({ p, band, date, me, dim }: { p: Person; band: BandDay; date:
       {...cellPressHandlers({ staffId: p.staff.id, date }, perms.editRota)}
       aria-label={`${p.staff.name}, ${code?.label ?? ''}${ic ? ', In Charge' : ''}${qc ? ', QC 2' : ''}`}
     >
-      <Avatar name={p.staff.name} tone={home?.tone} />
+      <Avatar name={p.staff.name} tone={band.section.tone} />
       <span className="who">
         <span className="name">
           <span className="truncate">{p.staff.preferredName ?? p.staff.name}</span>
@@ -108,7 +107,7 @@ function ShiftCard({ p, band, date, me, dim }: { p: Person; band: BandDay; date:
           {me && <Badge tone="accent">You</Badge>}
         </span>
         <span className="line">
-          <span>{home?.name ?? '—'} · <span className="mono">{p.a?.code}</span></span>
+          <span>{code?.label ?? band.section.name} · <span className="mono">{p.a?.code}</span></span>
         </span>
         {hours && <span className="hours">{hours}</span>}
         <span className="tags">

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dayModel, dutyEligibility, staffBySection, validateBand } from './model'
+import { dayModel, dutyEligibility, rotaIndex, staffBySection, validateBand } from './model'
 import { DEFAULT_CODES, DEFAULT_SECTIONS } from '../../data/defaults'
 import type { DutyAssignment, RotaAssignment, Staff } from '../../data/types'
 
@@ -51,6 +51,20 @@ describe('duty rules', () => {
     expect(m.absent.map((p) => p.staff.id)).toEqual(['d'])
     expect(m.off.map((p) => p.staff.id)).toEqual(['c'])
     expect(bands.find((b) => b.section.id === 'afternoon')!.working).toHaveLength(1)
+  })
+})
+
+describe('rota grid grouping', () => {
+  it('groups each person by the shift they work most in the days shown', () => {
+    // 'e' has Afternoon as home section; give them two morning shifts in the period
+    const base = ctx()
+    const c = { ...base, rota: [...base.rota.filter((r) => r.staffId !== 'e'), { ...cell('e', 'M'), id: `e|${D}` }, { id: 'e|2026-09-23', staffId: 'e', date: '2026-09-23', code: 'M', updatedAt: 0 }] }
+    const idx = rotaIndex(c)
+    const grouped = staffBySection(c, [D, '2026-09-23'], idx)
+    expect(grouped.get('morning')!.map((s) => s.id)).toContain('e')
+    expect(grouped.get('afternoon')!.map((s) => s.id)).not.toContain('e')
+    // without a period, the home section is used
+    expect(staffBySection(c).get('afternoon')!.map((s) => s.id)).toContain('e')
   })
 })
 

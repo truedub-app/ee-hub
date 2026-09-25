@@ -197,13 +197,29 @@ export function dutyRoleOf(idx: RotaIndex, staffId: string, date: ISODate): { in
   return { inCharge: false, qc2: false }
 }
 
-export function staffBySection(ctx: RotaCtx): Map<string, Staff[]> {
+/**
+ * Staff grouped for the rota grid. With `days`, each person sits under the shift they work most on
+ * those days (taken from the cells), so someone listed under Night who works mornings that week shows
+ * under Morning. Without shifts in the period, their home section is used.
+ */
+export function staffBySection(ctx: RotaCtx, days?: ISODate[], idx?: RotaIndex): Map<string, Staff[]> {
   const out = new Map<string, Staff[]>()
   for (const s of activeSections(ctx.sections)) out.set(s.id, [])
   for (const st of ctx.staff) {
     // people who are not on the rota (no home section) stay out of the rota grid
     if (st.deleted || !st.active || !st.section) continue
-    const list = out.get(st.section) ?? out.get([...out.keys()][0] ?? '')
+    let group = st.section
+    if (days && idx) {
+      const counts = new Map<string, number>()
+      for (const d of days) {
+        const a = idx.cell.get(`${st.id}|${d}`)
+        const band = a && idx.codes.get(a.code)?.kind === 'work' ? bandOf(idx, a) : undefined
+        if (band) counts.set(band, (counts.get(band) ?? 0) + 1)
+      }
+      const top = [...counts.entries()].sort((a, b) => b[1] - a[1] || Number(b[0] === st.section) - Number(a[0] === st.section))[0]
+      if (top && out.has(top[0])) group = top[0]
+    }
+    const list = out.get(group) ?? out.get([...out.keys()][0] ?? '')
     list?.push(st)
   }
   for (const list of out.values()) list.sort((a, b) => a.name.localeCompare(b.name))
@@ -215,6 +231,7 @@ export function hoursOf(idx: RotaIndex, sections: Section[], a?: RotaAssignment)
   if (!a) return undefined
   const code = idx.codes.get(a.code)
   if (!code || (code.kind !== 'work' && code.kind !== 'duty')) return undefined
+  if (a.hours) return a.hours.replace('–', ' – ')
   const s = sections.find((x) => x.id === bandOf(idx, a))
   return s ? `${s.start} – ${s.end}` : code.hours
 }

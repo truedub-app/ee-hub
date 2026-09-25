@@ -67,6 +67,7 @@ export interface RotaAssignment extends RecordMeta {
   date: ISODate
   code: string
   band?: string // section actually worked (for work / duty codes)
+  hours?: string // hours written in the rota cell when they differ from the band's standard hours, e.g. '07:00–15:00'
   suite?: string
   note?: string
   raw?: string // original spreadsheet text

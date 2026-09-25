@@ -240,6 +240,35 @@ export interface ResolvedCode {
   inCharge?: boolean
 }
 
+const minutes = (hm: string) => +hm.slice(0, 2) * 60 + +hm.slice(3, 5)
+
+/**
+ * The section a written time range belongs to: an exact match, else the one it overlaps most
+ * (e.g. "07 till 15" → Morning). Ranges past midnight such as 16:00–00:00 are handled.
+ */
+export function sectionForHours(sections: Section[], start: string, end: string): Section | undefined {
+  const exact = sections.find((s) => s.start === start && s.end === end)
+  if (exact) return exact
+  const span = (a: string, b: string): [number, number] => {
+    const x = minutes(a)
+    let y = minutes(b)
+    if (y <= x) y += 1440
+    return [x, y]
+  }
+  const [a, b] = span(start, end)
+  let best: Section | undefined
+  let bestOverlap = 0
+  for (const s of sections) {
+    const [c, d] = span(s.start, s.end)
+    const overlap = Math.max(...[-1440, 0, 1440].map((k) => Math.min(b, d + k) - Math.max(a, c + k)), 0)
+    if (overlap > bestOverlap) {
+      best = s
+      bestOverlap = overlap
+    }
+  }
+  return best
+}
+
 function toHM(h: string, m?: string): string {
   const hh = Math.min(24, +h) % 24
   return `${String(hh).padStart(2, '0')}:${(m ?? '00').padStart(2, '0')}`
@@ -265,10 +294,12 @@ export function resolveCode(raw: string, codes: ShiftCode[], sections: Section[]
   if (tm) {
     const start = toHM(tm[1], tm[2])
     const end = toHM(tm[3], tm[4])
-    const section = sections.find((s) => s.start === start && s.end === end)
+    const section = sectionForHours(sections, start, end)
     if (section) {
       const code = codes.find((c) => c.kind === 'work' && c.band === section.id)
-      if (code) return { code: code.code, band: section.id, hours: `${start}–${end}`, inCharge }
+      // keep the written hours when they differ from the section's standard ones
+      const own = start !== section.start || end !== section.end ? `${start}–${end}` : undefined
+      if (code) return { code: code.code, band: section.id, hours: own, inCharge }
     }
     return { code: 'X', hours: `${start}–${end}`, inCharge }
   }
@@ -389,6 +420,7 @@ export interface PlannedCell {
   date: ISODate
   code: string
   band?: string
+  hours?: string // written hours when they differ from the band's standard hours
   raw: string
   inferred?: string
   suite?: string
@@ -497,7 +529,7 @@ export function buildPlan(grid: Grid, layout: Layout, ctx: PlanContext): ImportP
     }
     const list = cellsByKey.get(key) ?? []
     const existing = list.findIndex((x) => x.date === c.date)
-    const planned: PlannedCell = { key, date: c.date, code, band: r?.band, raw: c.text, suite: c.suite, inCharge, where: where(c) }
+    const planned: PlannedCell = { key, date: c.date, code, band: r?.band, hours: r?.band ? r.hours : undefined, raw: c.text, suite: c.suite, inCharge, where: where(c) }
     if (existing >= 0) {
       const prev = list[existing]
       if (prev.code !== code) {
@@ -519,20 +551,15 @@ export function buildPlan(grid: Grid, layout: Layout, ctx: PlanContext): ImportP
     const display = ctx.renames?.[key] ?? displayName(rawName)
     const matched = findStaff(key, ctx.staff) ?? (ctx.renames?.[key] ? findStaff(nameKey(ctx.renames[key]), ctx.staff) : undefined)
     const suggestion = matched ? undefined : suggestStaff(key, ctx.staff)
-    // home section: block section if known, else majority band of work shifts
-    const blockSection = raws.find((x) => x.section)?.section ?? ''
+    // home section: the shift the cells show most often (the time written in each cell decides),
+    // else the section column / block the person is listed under
+    const blockSection = raws.find((x) => x.section)?.section || (raws[0].blockLabel ? matchSection(raws[0].blockLabel, ctx.sections) : undefined) || ''
     const counts = new Map<string, number>()
-    for (const c of cells) if (c.band) counts.set(c.band, (counts.get(c.band) ?? 0) + 1)
-    const majority = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0]
-    let section = blockSection || matched?.section || majority || ctx.sections[0]?.id || ''
-    let sectionInferred = !blockSection
-    if (!blockSection && raws[0].blockLabel) {
-      const fromLabel = matchSection(raws[0].blockLabel, ctx.sections)
-      if (fromLabel) {
-        section = fromLabel
-        sectionInferred = false
-      }
-    }
+    for (const c of cells) if (c.band && ctx.codes.find((x) => x.code === c.code)?.kind === 'work') counts.set(c.band, (counts.get(c.band) ?? 0) + 1)
+    const ranked = [...counts.entries()].sort((a, b) => b[1] - a[1] || Number(b[0] === blockSection) - Number(a[0] === blockSection))
+    const majority = ranked[0]?.[0]
+    const section = majority || blockSection || matched?.section || ctx.sections[0]?.id || ''
+    const sectionInferred = !blockSection // the file lists no section for this person
     names.push({
       key,
       raw: rawName,
@@ -753,6 +780,7 @@ export function applyPlan(
       date: c.date,
       code: c.code,
       band: c.band,
+      hours: c.hours,
       suite: c.suite ?? prev?.suite,
       raw: c.raw,
       inferred: c.inferred,
@@ -760,7 +788,7 @@ export function applyPlan(
       updatedAt: opts.now,
       updatedBy: opts.actor,
     }
-    if (prev && !prev.deleted && prev.code === next.code && prev.band === next.band && (prev.suite ?? '') === (next.suite ?? '')) {
+    if (prev && !prev.deleted && prev.code === next.code && prev.band === next.band && (prev.hours ?? '') === (next.hours ?? '') && (prev.suite ?? '') === (next.suite ?? '')) {
       unchanged++
       continue
     }

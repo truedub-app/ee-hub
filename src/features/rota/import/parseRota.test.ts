@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyPlan, buildPlan, detectLayout, isYellow, parseDateCell, resolveCode, type Grid } from './parseRota'
+import { applyPlan, buildPlan, detectLayout, isYellow, parseDateCell, resolveCode, sectionForHours, type Grid } from './parseRota'
 import { DEFAULT_CODES, DEFAULT_SECTIONS } from '../../../data/defaults'
 
 const M = '08 till 16 00'
@@ -62,8 +62,25 @@ describe('date and code parsing', () => {
     expect(r('   ')).toBe('U')
     expect(r('08:00-16:00 (IC)')).toBe('M')
     expect(resolveCode('08:00-16:00 ★', DEFAULT_CODES, DEFAULT_SECTIONS)?.inCharge).toBe(true)
-    expect(r('10 till 18 00')).toBe('X') // hours that match no section are kept as unrecognised
+    // hours that match no section exactly go to the section they overlap most, keeping the written hours
+    expect(resolveCode('10 till 18 00', DEFAULT_CODES, DEFAULT_SECTIONS)).toMatchObject({ code: 'M', band: 'morning', hours: '10:00–18:00' })
+    expect(resolveCode(M, DEFAULT_CODES, DEFAULT_SECTIONS)?.hours).toBeUndefined()
     expect(resolveCode('banana', DEFAULT_CODES, DEFAULT_SECTIONS)).toBeNull()
+  })
+})
+
+describe('sectionForHours', () => {
+  const s = (a: string, b: string) => sectionForHours(DEFAULT_SECTIONS, a, b)?.id
+  it('matches the standard shifts exactly', () => {
+    expect(s('08:00', '16:00')).toBe('morning')
+    expect(s('16:00', '00:00')).toBe('afternoon')
+    expect(s('00:00', '08:00')).toBe('night')
+  })
+  it('puts other hours in the shift they overlap most, across midnight too', () => {
+    expect(s('07:00', '15:00')).toBe('morning')
+    expect(s('14:00', '22:00')).toBe('afternoon')
+    expect(s('22:00', '06:00')).toBe('night')
+    expect(s('18:00', '02:00')).toBe('afternoon')
   })
 })
 
@@ -90,9 +107,17 @@ describe('buildPlan', () => {
     const delta = plan.cells.find((c) => c.key === 'delta' && c.date === '2026-09-15')!
     expect(delta.code).toBe('Q')
     expect(delta.band).toBe('morning')
-    expect(delta.inferred).toMatch(/inferred/i)
     const charlie = plan.cells.find((c) => c.key === 'charlietwo' && c.date === '2026-09-14')!
     expect(charlie.band).toBe('afternoon')
+  })
+
+  it('takes each shift from the time written in the cell, not the block', () => {
+    // delta is listed under Afternoon but every written time is 08–16
+    const delta = plan.names.find((n) => n.key === 'delta')!
+    expect(delta.section).toBe('morning')
+    expect(plan.cells.filter((c) => c.key === 'delta' && c.code === 'M').every((c) => c.band === 'morning')).toBe(true)
+    // charlie is listed under Afternoon and works afternoons: unchanged
+    expect(plan.names.find((n) => n.key === 'charlietwo')!.section).toBe('afternoon')
   })
 
   it('infers home sections for the holidays block', () => {
