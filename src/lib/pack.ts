@@ -111,17 +111,22 @@ function keyFor(entry: PackFileEntry, keys: PackKeys): CryptoKey {
 
 export async function readFile(entry: PackFileEntry, keys: PackKeys, onProgress?: (done: number, total: number) => void): Promise<Uint8Array<ArrayBuffer>> {
   const key = keyFor(entry, keys)
-  const out = new Uint8Array(entry.size)
-  let offset = 0
+  const chunks: Uint8Array<ArrayBuffer>[] = []
   let downloaded = 0
   const sealedTotal = entry.size + entry.parts.length * 32
   for (const part of entry.parts) {
     const sealed = await getPart(part, onProgress ? (n) => onProgress((downloaded += n), sealedTotal) : undefined)
-    const plain = await open(key, sealed)
-    out.set(plain, offset)
-    offset += plain.length
+    chunks.push(await open(key, sealed))
   }
   onProgress?.(sealedTotal, sealedTotal)
+  if (chunks.length === 1) return chunks[0]
+  // size the result from what was actually decrypted, never from the index (a wrong size would leave padding)
+  const out = new Uint8Array(chunks.reduce((n, c) => n + c.length, 0))
+  let offset = 0
+  for (const c of chunks) {
+    out.set(c, offset)
+    offset += c.length
+  }
   return out
 }
 

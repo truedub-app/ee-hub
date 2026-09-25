@@ -5,7 +5,7 @@
  * decrypts the new version with the keys it already holds.
  */
 import { zipSync } from 'fflate'
-import { randomBytes, sealJson, toHex } from '../lib/crypto'
+import { randomBytes, seal, sealJson, sha256Hex, toHex } from '../lib/crypto'
 import type { CoreDataFile, PackFileEntry, PackIndex, PackManifest, RestrictedDataFile } from '../lib/packFormat'
 import { PACK_FORMAT } from '../lib/packFormat'
 import { useHub } from './store'
@@ -34,12 +34,13 @@ export async function buildPublishFiles(): Promise<PublishFiles> {
   const data = { ...s.data, imports: s.data.imports.map(({ before: _b, beforeDuties: _d, ...rest }) => rest) }
   const core: CoreDataFile = { version, builtAt, data }
   const restricted: RestrictedDataFile = { version, data: { blacklist: s.blacklist, sheets: s.sheets } }
-  const coreBytes = await sealJson(session.keys.core, core)
-  const restrictedBytes = await sealJson(session.keys.restricted, restricted)
+  // index entries record the plaintext size and hash (readers size their buffers from it)
+  const corePlain = new TextEncoder().encode(JSON.stringify(core))
+  const restrictedPlain = new TextEncoder().encode(JSON.stringify(restricted))
   const coreName = newName()
   const restrictedName = newName()
-  out[`pack/${coreName}`] = coreBytes
-  out[`pack/${restrictedName}`] = restrictedBytes
+  out[`pack/${coreName}`] = await seal(session.keys.core, corePlain)
+  out[`pack/${restrictedName}`] = await seal(session.keys.restricted, restrictedPlain)
 
   const files: Record<string, PackFileEntry> = { ...index.files }
   const coreId = `data:core:v${version}`
@@ -51,8 +52,8 @@ export async function buildPublishFiles(): Promise<PublishFiles> {
   ].map((p) => `pack/${p}`)
   delete files[index.data.core]
   if (index.data.restricted) delete files[index.data.restricted]
-  files[coreId] = { parts: [coreName], size: coreBytes.length, mime: 'application/json', sha: '', key: 'core' }
-  files[restrictedId] = { parts: [restrictedName], size: restrictedBytes.length, mime: 'application/json', sha: '', key: 'restricted' }
+  files[coreId] = { parts: [coreName], size: corePlain.length, mime: 'application/json', sha: await sha256Hex(corePlain), key: 'core' }
+  files[restrictedId] = { parts: [restrictedName], size: restrictedPlain.length, mime: 'application/json', sha: await sha256Hex(restrictedPlain), key: 'restricted' }
 
   // Files added on this device (imported documents, the blacklist image) travel with the publish
   for (const id of referencedLocalFileIds()) {
