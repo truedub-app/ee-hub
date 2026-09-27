@@ -1,8 +1,8 @@
 import type { BlacklistEntry, DocContent, HubData } from '../../data/types'
 import { live } from '../../data/merge'
 import { nameKey, levenshtein } from '../../lib/text'
-import { today, mediumDate } from '../../lib/dates'
-import { dayIssues, rotaIndex } from '../rota/model'
+import { mediumDate, rotaToday } from '../../lib/dates'
+import { dayIssues, rotaDayStart, rotaIndex } from '../rota/model'
 
 export interface IntegrityIssue {
   id: string
@@ -62,7 +62,7 @@ export function integrityReport(data: HubData, blacklist: BlacklistEntry[] | und
   // Missing duty holders (from today onwards)
   const ctx = { staff: data.staff, codes: data.shiftCodes, sections: data.sections, rota: data.rota, duties: data.duties }
   const idx = rotaIndex(ctx)
-  const t = today()
+  const t = rotaToday(rotaDayStart(data.sections))
   const dutyItems: { label: string; to: string }[] = []
   for (const d of idx.dates) {
     if (d < t) continue

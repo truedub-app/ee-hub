@@ -3,14 +3,14 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, FileSpreadsheet, Printer, Star, UserPlus, Download } from 'lucide-react'
 import { useHub, usePerms } from '../../data/store'
 import type { ISODate } from '../../data/types'
-import { addDays, addMonths, fromISO, isValidDate, longDate, monthDays, monthLabel, range, shortDay, startOfWeek, today, mediumDate } from '../../lib/dates'
+import { addDays, addMonths, fromISO, isValidDate, longDate, monthDays, monthLabel, range, shortDay, startOfWeek, mediumDate } from '../../lib/dates'
 import { Chip, Empty, Segmented, SearchInput, cx } from '../../ui/primitives'
 import { downloadBytes } from '../../data/backup'
 import { DayView } from './DayView'
 import { Legend, RotaGrid } from './GridViews'
 import { openCellEditor } from './CellEditor'
 import { bandOf, cellOf, dutyRoleOf, hoursOf } from './model'
-import { useRotaCtx } from './useRota'
+import { useRotaCtx, useRotaToday } from './useRota'
 import './rota.css'
 
 export type View = 'day' | 'week' | 'month'
@@ -38,7 +38,8 @@ export function RotaPage() {
   const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
   const view = (sp.get('view') as View) || 'day'
   const scope = sp.get('scope') === 'me' && meId ? 'me' : 'team'
-  const date = validDate(sp.get('date')) ?? today()
+  const rotaDay = useRotaToday()
+  const date = validDate(sp.get('date')) ?? rotaDay
   const filter: RotaFilter = {
     sections: (sp.get('sec') ?? '').split(',').filter(Boolean),
     status: (sp.get('st') as StatusFilter) || '',
@@ -186,7 +187,7 @@ export function RotaPage() {
 function MySchedule({ staffId, days, view }: { staffId: string; days: ISODate[]; view: View }) {
   const ctx = useRotaCtx()
   const staff = ctx.idx.staff.get(staffId)
-  const t = today()
+  const t = useRotaToday()
   if (!staff) return <Empty icon={<CalendarDays />} title="Your profile isn’t on the rota">Pick your name in Settings → Profile.</Empty>
   if (view !== 'day') {
     return (

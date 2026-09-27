@@ -6,7 +6,8 @@ import { canSeeBlacklist, useHub } from '../../data/store'
 import { buildSearchIndex, runSearch, snippet, type Hit, type HitKind } from './searchIndex'
 import { Badge, Highlight, Modal, SearchInput } from '../../ui/primitives'
 import { rotaIndex, cellOf, bandOf, dutyRoleOf } from '../rota/model'
-import { today, shortDay, addDays } from '../../lib/dates'
+import { rotaTodayNow } from '../rota/useRota'
+import { shortDay, addDays } from '../../lib/dates'
 
 const usePalette = create<{ isOpen: boolean }>(() => ({ isOpen: false }))
 
@@ -95,7 +96,7 @@ export function SearchPalette() {
     if (!item) return
     const h = item.hit
     let route = h.doc.route
-    if (item.group === 'rota') route = `/rota?view=week&staff=${encodeURIComponent(h.doc.refId)}&date=${today()}`
+    if (item.group === 'rota') route = `/rota?view=week&staff=${encodeURIComponent(h.doc.refId)}&date=${rotaTodayNow()}`
     if (item.group === 'blacklist') audit('blacklist.search', h.doc.title)
     close()
     setQ('')
@@ -103,7 +104,7 @@ export function SearchPalette() {
   }
 
   const rotaLine = (staffId: string) => {
-    const t = today()
+    const t = rotaTodayNow()
     const parts: string[] = []
     for (let i = 0; i < 3; i++) {
       const d = addDays(t, i)

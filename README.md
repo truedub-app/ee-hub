@@ -106,6 +106,10 @@ and `00 00 till 08 00` is Night. This applies even when the person is listed in 
 to the shift they overlap most, and the app keeps and shows the actual hours (for example `07 till 15 00` is Morning,
 07:00–15:00). The week and month tables group each person by the shift they work most in the days shown.
 
+**The rota day runs from 08:00 to 08:00.** The night shift (00:00–08:00) is listed under the previous day, so between
+midnight and 08:00 the app still shows that day. At 00:30 on the 27th, Home, the Day view and the duty board show the 26th.
+The Today card also shows the shift coming up that morning.
+
 Without automatic publishing, use **Or publish by hand with a zip file** on the same page. Then, on GitHub:
 1. Switch to the **gh-pages** branch and open `pack/`.
 2. Choose **Add file → Upload files** and drag in the contents of the zip's `pack` folder.

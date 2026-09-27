@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useHub, usePerms } from '../../data/store'
-import { addDays, ago, diffDays, mediumDate, today } from '../../lib/dates'
-import { dayIssues, rotaIndex } from '../rota/model'
+import { addDays, ago, diffDays, mediumDate, rotaToday, today } from '../../lib/dates'
+import { dayIssues, rotaDayStart, rotaIndex } from '../rota/model'
 import { live } from '../../data/merge'
 
 export interface HubNotice {
@@ -20,7 +20,8 @@ export function useNotices(): HubNotice[] {
   const perms = usePerms()
   return useMemo(() => {
     const out: HubNotice[] = []
-    const t = today()
+    const cal = today() // calendar date, for the blacklist
+    const t = rotaToday(rotaDayStart(data.sections)) // rota day, for everything rota-related
     const ctx = { staff: data.staff, codes: data.shiftCodes, sections: data.sections, rota: data.rota, duties: data.duties }
     const idx = rotaIndex(ctx)
     const last = idx.dates[idx.dates.length - 1]
@@ -55,11 +56,11 @@ export function useNotices(): HubNotice[] {
     if (review.length && perms.editStaff) out.push({ id: 'staff-review', tone: 'warn', area: 'staff', text: `${review.length} staff record${review.length === 1 ? '' : 's'} require review`, to: '/admin/staff' })
 
     if (perms.viewBlacklist && !local.hideBlacklist) {
-      const recent = live(blacklist).filter((b) => Date.now() - b.updatedAt < 7 * 86_400_000 && b.dateAdded && diffDays(t, b.dateAdded) <= 7)
+      const recent = live(blacklist).filter((b) => Date.now() - b.updatedAt < 7 * 86_400_000 && b.dateAdded && diffDays(cal, b.dateAdded) <= 7)
       if (recent.length) out.push({ id: `bl-new-${recent.length}`, tone: 'alert', area: 'blacklist', text: `${recent.length} new blacklist entr${recent.length === 1 ? 'y' : 'ies'} this week`, to: '/blacklist' })
       const fresh = live(sheets).filter((sh) => Date.now() - sh.updatedAt < 7 * 86_400_000)
       if (fresh.length) out.push({ id: `bl-sheet-${fresh[0].id}-${fresh[0].updatedAt}`, tone: 'alert', area: 'blacklist', text: `Blacklist image updated ${ago(fresh[0].updatedAt)}`, to: '/blacklist' })
-      const overdue = live(blacklist).filter((b) => b.active && b.reviewDue && b.reviewDue < t)
+      const overdue = live(blacklist).filter((b) => b.active && b.reviewDue && b.reviewDue < cal)
       if (overdue.length) out.push({ id: 'bl-overdue', tone: 'warn', area: 'blacklist', text: `${overdue.length} blacklist review${overdue.length === 1 ? '' : 's'} overdue`, to: '/blacklist?filter=overdue' })
     }
 

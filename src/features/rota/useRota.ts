@@ -1,8 +1,27 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useReducer } from 'react'
 import { useHub } from '../../data/store'
 import type { DutyAssignment, ISODate, RotaAssignment, Section, ShiftCode } from '../../data/types'
-import { activeSections, rotaIndex, type RotaCtx } from './model'
+import { activeSections, rotaDayStart, rotaIndex, type RotaCtx } from './model'
 import { OPTIONAL_SECTIONS } from '../../data/defaults'
+import { msUntil, rotaToday } from '../../lib/dates'
+
+/** Today's rota day right now (for event handlers and non-React code). */
+export function rotaTodayNow(): ISODate {
+  return rotaToday(rotaDayStart(useHub.getState().data.sections))
+}
+
+/** Today's rota day; the component re-renders when it changes (at the end of the night shift). */
+export function useRotaToday(): ISODate {
+  const sections = useHub((s) => s.data.sections)
+  const start = rotaDayStart(sections)
+  const [, tick] = useReducer((n: number) => n + 1, 0)
+  const t = rotaToday(start)
+  useEffect(() => {
+    const id = setTimeout(tick, msUntil(start) + 1000)
+    return () => clearTimeout(id)
+  }, [t, start])
+  return t
+}
 
 export function useRotaCtx(): RotaCtx & { idx: ReturnType<typeof rotaIndex> } {
   const staff = useHub((s) => s.data.staff)

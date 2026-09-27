@@ -5,11 +5,11 @@ import { useHub, usePerms } from '../../data/store'
 import type { Contact, Staff } from '../../data/types'
 import { CONTACT_TEAMS } from '../../data/defaults'
 import { fold, slug, uid } from '../../lib/text'
-import { addDays, shortDay, today } from '../../lib/dates'
+import { addDays, shortDay } from '../../lib/dates'
 import { Avatar, Badge, Chip, Empty, Field, Modal, SearchInput, cx } from '../../ui/primitives'
 import { confirmDialog, toast } from '../../ui/toast'
 import { bandOf, cellOf, dutyRoleOf } from '../rota/model'
-import { useRotaCtx } from '../rota/useRota'
+import { useRotaCtx, useRotaToday } from '../rota/useRota'
 import './contacts.css'
 
 const TEAM_TONE: Record<string, string> = {
@@ -145,7 +145,7 @@ function ContactForm({ initial, onClose }: { initial?: Contact; onClose: () => v
 
 function StaffCard({ s, onOpen }: { s: Staff; onOpen: () => void }) {
   const ctx = useRotaCtx()
-  const t = today()
+  const t = useRotaToday()
   const sec = ctx.sections.find((x) => x.id === s.section)
   const a = cellOf(ctx.idx, s.id, t)
   const code = a ? ctx.idx.codes.get(a.code) : undefined
@@ -180,10 +180,11 @@ export function StaffProfile({ id, onClose }: { id: string; onClose: () => void 
   const ctx = useRotaCtx()
   const perms = usePerms()
   const navigate = useNavigate()
+  const rotaDay = useRotaToday()
   const s = ctx.idx.staff.get(id)
   if (!s) return null
   const sec = ctx.sections.find((x) => x.id === s.section)
-  const days = Array.from({ length: 7 }, (_, i) => addDays(today(), i))
+  const days = Array.from({ length: 7 }, (_, i) => addDays(rotaDay, i))
   return (
     <Modal open onClose={onClose} title="Team profile" footer={
       <>

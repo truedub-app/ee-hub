@@ -43,6 +43,27 @@ export function today(): ISODate {
   return toISO(new Date())
 }
 
+/**
+ * The rota day. The department's night shift (00:00–08:00) is listed under the day before, so a rota
+ * day runs from `dayStart` (the end of the night shift) to the same time next morning: at 00:30 on the
+ * 27th it is still the 26th. Use for anything rota-related; use today() for calendar dates.
+ */
+export function rotaToday(dayStart = '00:00', now = new Date()): ISODate {
+  const [h, m] = dayStart.split(':').map(Number)
+  const d = new Date(now)
+  if (d.getHours() * 60 + d.getMinutes() < h * 60 + m) d.setDate(d.getDate() - 1)
+  return toISO(d)
+}
+
+/** Milliseconds from `now` until the next time the clock shows `hm` ('08:00'). */
+export function msUntil(hm: string, now = new Date()): number {
+  const [h, m] = hm.split(':').map(Number)
+  const next = new Date(now)
+  next.setHours(h, m, 0, 0)
+  if (next <= now) next.setDate(next.getDate() + 1)
+  return next.getTime() - now.getTime()
+}
+
 export function diffDays(a: ISODate, b: ISODate): number {
   return Math.round((fromISO(a).getTime() - fromISO(b).getTime()) / 86_400_000)
 }

@@ -5,10 +5,10 @@ import {
   Star, TriangleAlert, UserPlus, X, FileText,
 } from 'lucide-react'
 import { canSeeBlacklist, useHub, usePerms } from '../../data/store'
-import { greeting, hm, longDate, relativeDateTime, today, formatDuration } from '../../lib/dates'
+import { greeting, hm, longDate, relativeDateTime, formatDuration, shortDay, today } from '../../lib/dates'
 import { Badge, Empty, cx, Glyph } from '../../ui/primitives'
 import { dayModel, cellOf, bandOf, hoursOf } from '../rota/model'
-import { useRotaCtx } from '../rota/useRota'
+import { rotaTodayNow, useRotaCtx, useRotaToday } from '../rota/useRota'
 import { openCellEditor } from '../rota/CellEditor'
 import { useNotices } from './notices'
 import { useSearchPalette } from '../search/SearchPalette'
@@ -31,7 +31,7 @@ function TodayCard() {
   const ctx = useRotaCtx()
   const meId = useHub((s) => s.local.staffId)
   const navigate = useNavigate()
-  const t = today()
+  const t = useRotaToday()
   if (!meId) {
     return (
       <section className="card home-today" aria-label="Today's shift">
@@ -51,6 +51,12 @@ function TodayCard() {
   const qc2Name = duty?.qc2Id ? ctx.idx.staff.get(duty.qc2Id)?.name : undefined
   const icName = duty?.inChargeId ? ctx.idx.staff.get(duty.inChargeId)?.name : undefined
   const tone = a?.code === 'Q' ? 'qc2' : working ? sec?.tone : code?.tone ?? 'unassigned'
+  // after midnight the rota day is still yesterday (night shift); show the shift coming up in the morning too
+  const cal = today()
+  const upcoming = cal !== t ? cellOf(ctx.idx, meId, cal) : undefined
+  const upCode = upcoming ? ctx.idx.codes.get(upcoming.code) : undefined
+  const upWorking = upCode?.kind === 'work' || upCode?.kind === 'duty'
+  const upSec = ctx.sections.find((s) => s.id === bandOf(ctx.idx, upcoming))
   return (
     <section className={cx('card home-today stripe', `tone-${tone}`)} aria-label="Today's shift">
       <div className="row"><span className="eyebrow">Today</span><span className="spacer" /><span className="small faint">{longDate(t)}</span></div>
@@ -70,6 +76,11 @@ function TodayCard() {
           )}
         </>
       )}
+      {upcoming && upWorking && (
+        <p className="small muted" style={{ marginTop: 6 }}>
+          Coming up: <strong>{shortDay(cal)}</strong> · {upSec?.name ?? upCode?.label} <span className="mono">{hoursOf(ctx.idx, ctx.sections, upcoming)}</span>
+        </p>
+      )}
       <button className="btn btn-sm btn-ghost" style={{ alignSelf: 'flex-start', marginTop: 'auto' }} onClick={() => navigate('/rota?scope=me')}>My schedule <ChevronRight /></button>
     </section>
   )
@@ -78,7 +89,7 @@ function TodayCard() {
 function Coverage() {
   const ctx = useRotaCtx()
   const navigate = useNavigate()
-  const t = today()
+  const t = useRotaToday()
   const bands = dayModel(t, ctx, ctx.idx)
   const now = currentBand(ctx.sections)
   if (!ctx.idx.byDate.has(t)) {
@@ -118,7 +129,7 @@ function QuickActions() {
   const palette = useSearchPalette()
   const actions = [
     { icon: <CalendarDays />, label: 'View today’s rota', on: () => navigate('/rota') },
-    perms.editRota && { icon: <UserPlus />, label: 'Assign shift', on: () => { navigate('/rota'); openCellEditor({ date: today() }) } },
+    perms.editRota && { icon: <UserPlus />, label: 'Assign shift', on: () => { navigate('/rota'); openCellEditor({ date: rotaTodayNow() }) } },
     { icon: <BookOpen />, label: 'Open Work Manual', on: () => navigate('/manual') },
     { icon: <Contact />, label: 'Search contacts', on: () => navigate('/contacts?focusSearch=1') },
     perms.importRota && { icon: <FileSpreadsheet />, label: 'Import new rota', on: () => navigate('/rota/import') },

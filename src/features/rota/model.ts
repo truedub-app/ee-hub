@@ -58,6 +58,20 @@ export function isAbsence(idx: RotaIndex, a?: RotaAssignment): boolean {
   return codeKind(idx, a?.code) === 'absence'
 }
 
+/**
+ * When the rota day starts: the end of the shift worked after midnight (Night, 00:00–08:00 → '08:00'),
+ * because that shift belongs to the previous day's column. '00:00' if no shift runs past midnight.
+ */
+export function rotaDayStart(sections: Section[]): string {
+  let start = '00:00'
+  for (const s of sections) {
+    if (s.deleted) continue
+    const afterMidnight = s.start === '00:00' || (s.end !== '00:00' && s.end < s.start)
+    if (afterMidnight && s.end > start) start = s.end
+  }
+  return start
+}
+
 /** Band actually worked for an assignment (explicit band, else the code's band). */
 export function bandOf(idx: RotaIndex, a?: RotaAssignment): string | undefined {
   if (!a) return undefined

@@ -1,12 +1,12 @@
 import { Fragment, useEffect, useMemo, useRef } from 'react'
 import { usePerms } from '../../data/store'
 import type { ISODate, Staff } from '../../data/types'
-import { isWeekend, today, weekdayShort, weekdayNarrow, fromISO } from '../../lib/dates'
+import { isWeekend, weekdayShort, weekdayNarrow, fromISO } from '../../lib/dates'
 import { fold } from '../../lib/text'
 import { Avatar, cx } from '../../ui/primitives'
 import { bandOf, cellOf, isOnShift, staffBySection } from './model'
 import { cellPressHandlers, openCellEditor } from './CellEditor'
-import { useRotaCtx } from './useRota'
+import { useRotaCtx, useRotaToday } from './useRota'
 import type { RotaFilter } from './RotaPage'
 
 interface GridProps {
@@ -22,7 +22,7 @@ interface GridProps {
 export function RotaGrid({ days, filter, compact, meId, onlyStaff, highlight, query }: GridProps) {
   const ctx = useRotaCtx()
   const perms = usePerms()
-  const t = today()
+  const t = useRotaToday()
   const wrapRef = useRef<HTMLDivElement>(null)
   const groups = useMemo(() => {
     const bySec = staffBySection(ctx, days, ctx.idx)
