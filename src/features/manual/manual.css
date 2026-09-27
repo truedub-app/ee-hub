@@ -116,3 +116,15 @@ h4.doc-h { font-size: 0.98rem; color: var(--accent-2); }
 .seg-table td.cat-cell { min-width: 170px; font-weight: 650; color: var(--text); }
 .seg-table .dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 8px; background: var(--tone); vertical-align: 0; }
 .seg-expand { width: 100%; padding: 14px 16px 14px 20px; border: 0; background: none; color: var(--text); gap: 8px; }
+
+/* Walkthrough videos inside the document they explain */
+.doc-videos { display: flex; flex-direction: column; gap: 10px; margin: 4px 0 22px; padding: 14px; border-radius: var(--radius-lg); border: 1px solid var(--line); background: var(--surface-2); }
+.doc-videos-head { display: flex; align-items: center; gap: 8px; color: var(--accent-2); }
+.doc-videos-head h3 { color: var(--text); font-size: 0.95rem; }
+.video-picks { display: flex; flex-direction: column; gap: 4px; }
+.video-pick {
+  display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 8px 12px; border-radius: 10px; text-align: left;
+  border: 1px solid var(--line); background: var(--surface); color: var(--text-2); font-size: 0.875rem;
+}
+.video-pick:hover { border-color: var(--line-strong); color: var(--text); }
+.video-pick.on { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); background: var(--accent-soft); color: var(--text); font-weight: 560; }

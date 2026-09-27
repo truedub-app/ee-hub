@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, ChevronLeft, ChevronRight, Copy, Download, FileText, List, Search } from 'lucide-react'
+import { ArrowLeft, ChevronLeft, ChevronRight, Copy, Download, FileText, List, Play, Search } from 'lucide-react'
 import { useHub } from '../../data/store'
 import { entryFor, getContent } from '../../data/sync'
 import type { DocContent, GuideContent, ManualDoc } from '../../data/types'
@@ -8,12 +8,13 @@ import { readFile } from '../../lib/pack'
 import { downloadBytes } from '../../data/backup'
 import { Badge, Empty, Glyph, Modal, cx } from '../../ui/primitives'
 import { toast } from '../../ui/toast'
-import { mediumDate } from '../../lib/dates'
+import { formatDuration, mediumDate } from '../../lib/dates'
 import { DocBlocks } from './DocBlocks'
 import { PdfViewer } from './PdfViewer'
 import { VideoPlayer } from './VideoPlayer'
 import { SegmentationView } from './SegmentationView'
 import { docMeta } from './ManualPage'
+import { useDocVideos } from './videos'
 
 async function downloadOriginal(d: ManualDoc) {
   const s = useHub.getState()
@@ -23,6 +24,40 @@ async function downloadOriginal(d: ManualDoc) {
   const bytes = await readFile(entry, s.session.keys)
   downloadBytes(bytes, entry.name ?? d.fileName ?? `${d.title}`, entry.mime)
   s.audit('manual.export', d.title)
+}
+
+/** A document's walkthrough videos: one player, with a picker when there are several. */
+function DocVideos({ videos }: { videos: ManualDoc[] }) {
+  const [sp, setSp] = useSearchParams()
+  const current = videos.find((v) => v.id === sp.get('video')) ?? videos[0]
+  const pick = (id: string) => {
+    const n = new URLSearchParams(sp)
+    n.set('video', id)
+    n.delete('t')
+    setSp(n, { replace: true })
+  }
+  if (!current?.fileId) return null
+  return (
+    <section className="doc-videos" aria-label="Video walkthrough">
+      <div className="doc-videos-head">
+        <Play width={16} />
+        <h3>{videos.length === 1 ? 'Video walkthrough' : `Video walkthroughs · ${videos.length}`}</h3>
+        {videos.length === 1 && current.duration ? <span className="mono tiny faint">{formatDuration(current.duration)}</span> : null}
+      </div>
+      {videos.length > 1 && (
+        <div className="video-picks" role="tablist" aria-label="Videos">
+          {videos.map((v) => (
+            <button key={v.id} role="tab" aria-selected={v.id === current.id} className={cx('video-pick', v.id === current.id && 'on')} onClick={() => pick(v.id)}>
+              <span className="grow" dir="auto">{v.title}</span>
+              {v.duration ? <span className="mono tiny">{formatDuration(v.duration)}</span> : null}
+            </button>
+          ))}
+        </div>
+      )}
+      <VideoPlayer key={current.id} fileId={current.fileId} posterId={current.posterId} docId={current.id} startAt={Number(sp.get('t')) || undefined} onDownload={() => void downloadOriginal(current)} />
+      {videos.length > 1 && current.description && <p className="small muted" dir="auto">{current.description}</p>}
+    </section>
+  )
 }
 
 function GuideView({ doc, content }: { doc: ManualDoc; content: GuideContent }) {
@@ -36,6 +71,7 @@ function GuideView({ doc, content }: { doc: ManualDoc; content: GuideContent }) 
   const [q, setQ] = useState('')
   const [toc, setToc] = useState(false)
   const docs = useHub((s) => s.data.docs)
+  const { videosOf } = useDocVideos()
   const procFor = (sid: string) => docs.find((d) => d.parentId === doc.id && d.sectionId === sid && !d.deleted)
   const go = (id: string) => {
     const n = new URLSearchParams(sp)
@@ -99,6 +135,11 @@ function GuideView({ doc, content }: { doc: ManualDoc; content: GuideContent }) 
             <button className="btn btn-sm btn-ghost" onClick={() => navigate(`/manual/${doc.parentId}?section=${doc.sectionId}`)}>Open in the full User Guide</button>
           )}
         </header>
+        {(() => {
+          // the full guide shows each module's videos (a procedure card shows its own above the text)
+          const vids = isProcedure ? undefined : videosOf.get(procFor(section.id)?.id ?? '')
+          return vids?.length ? <DocVideos key={section.id} videos={vids} /> : null
+        })()}
         <DocBlocks blocks={section.blocks} q={q.trim()} title={doc.title} />
         {!isProcedure && (
           <div className="row" style={{ marginTop: 28, gap: 10 }}>
@@ -134,6 +175,7 @@ export function Reader({ docId, onClose }: { docId: string; onClose: () => void 
   const doc = useHub((s) => s.data.docs.find((d) => d.id === docId && !d.deleted))
   const categories = useHub((s) => s.data.categories)
   const docs = useHub((s) => s.data.docs)
+  const { videosOf } = useDocVideos()
   const touchRecent = useHub((s) => s.touchRecent)
   const indexReady = useHub((s) => !!s.index)
   const [sp] = useSearchParams()
@@ -158,7 +200,9 @@ export function Reader({ docId, onClose }: { docId: string; onClose: () => void 
       </Modal>
     )
   }
-  const related = (doc.related ?? []).map((id) => docs.find((d) => d.id === id && !d.deleted)).filter(Boolean) as ManualDoc[]
+  const ownVideos = videosOf.get(doc.id) ?? []
+  // the document's own videos are shown above its text, not again under "Related"
+  const related = (doc.related ?? []).filter((id) => !ownVideos.some((v) => v.id === id)).map((id) => docs.find((d) => d.id === id && !d.deleted)).filter(Boolean) as ManualDoc[]
   const page = Number(sp.get('page')) || undefined
 
   return (
@@ -185,6 +229,7 @@ export function Reader({ docId, onClose }: { docId: string; onClose: () => void 
         </div>
         {doc.kind !== 'procedure' && doc.kind !== 'guide' && <p className="reader-desc">{doc.description}</p>}
         {error && <Empty icon={<FileText />} title="Not available offline yet">{error} — connect to the network once and open it again.</Empty>}
+        {ownVideos.length > 0 && doc.kind !== 'guide' && <DocVideos videos={ownVideos} />}
 
         {doc.kind === 'pdf' && doc.fileId && (
           <>

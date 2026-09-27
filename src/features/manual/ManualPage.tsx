@@ -10,6 +10,7 @@ import { Badge, Chip, Empty, Glyph, SearchInput, Highlight, cx } from '../../ui/
 import { runSearch, snippet } from '../search/searchIndex'
 import { useSearchIndex } from '../search/SearchPalette'
 import { Reader } from './Reader'
+import { useDocVideos } from './videos'
 import './manual.css'
 
 type Kind = 'all' | 'documents' | 'videos' | 'procedures'
@@ -22,7 +23,13 @@ export function docMeta(d: ManualDoc): string {
   return `Procedure · ${d.reference ?? ''}`
 }
 
-function Thumb({ d }: { d: ManualDoc }) {
+/** "6:49" for one video, "3 videos" for several. */
+function videosLabel(videos: ManualDoc[]): string {
+  if (videos.length === 1) return videos[0].duration ? formatDuration(videos[0].duration) : 'Video'
+  return `${videos.length} videos`
+}
+
+function Thumb({ d, videos }: { d: ManualDoc; videos?: ManualDoc[] }) {
   const { url } = useFileUrl(d.posterId)
   const Icon = d.kind === 'video' ? Play : d.kind === 'segmentation' ? Scissors : d.kind === 'guide' ? BookOpen : d.kind === 'procedure' ? Layers : FileText
   return (
@@ -30,21 +37,22 @@ function Thumb({ d }: { d: ManualDoc }) {
       {url ? <img src={url} alt="" loading="lazy" /> : <Icon />}
       {d.kind === 'video' && <span className="thumb-play" aria-hidden>▶</span>}
       {d.kind === 'video' && d.duration && <span className="thumb-dur">{formatDuration(d.duration)}</span>}
+      {!!videos?.length && <span className="thumb-dur"><Play width={10} height={10} fill="currentColor" style={{ verticalAlign: -1 }} /> {videosLabel(videos)}</span>}
     </div>
   )
 }
 
-export function DocCard({ d, cat, snip, onOpen }: { d: ManualDoc; cat?: DocCategory; snip?: { text: string; marks: [number, number][] }; onOpen: () => void }) {
+export function DocCard({ d, cat, snip, videos, onOpen }: { d: ManualDoc; cat?: DocCategory; snip?: { text: string; marks: [number, number][] }; videos?: ManualDoc[]; onOpen: () => void }) {
   return (
     <button className={cx('doc-card', `tone-${cat?.tone ?? 'accent'}`)} onClick={onOpen} aria-label={`${d.title}, ${cat?.name}`}>
-      <Thumb d={d} />
+      <Thumb d={d} videos={videos} />
       <div className="doc-card-body">
         <span className="doc-cat"><Glyph name={cat?.glyph ?? 'file'} size={13} /> {cat?.name}</span>
         <strong className="doc-title" dir="auto">{d.title}</strong>
         {(d.reference || d.version) && <span className="mono tiny faint">{[d.reference, d.version].filter(Boolean).join(' ')}</span>}
         <p className="doc-desc">{snip ? <Highlight text={snip.text} marks={snip.marks} /> : d.description}</p>
         <div className="doc-foot">
-          <span className="tiny faint">{docMeta(d)}</span>
+          <span className="tiny faint">{docMeta(d)}{videos?.length ? ` · ${videos.length === 1 ? 'with video' : `with ${videos.length} videos`}` : ''}</span>
           {d.owner && <span className="tiny faint truncate">Owned by: {d.owner}</span>}
         </div>
       </div>
@@ -74,7 +82,21 @@ export function ManualPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q])
 
-  const liveDocs = useMemo(() => docs.filter((d) => !d.deleted), [docs])
+  const { homeOf, videosOf } = useDocVideos()
+  const allDocs = useMemo(() => docs.filter((d) => !d.deleted), [docs])
+  // videos that belong to a document are shown inside it, not as separate cards
+  const liveDocs = useMemo(() => allDocs.filter((d) => !homeOf.has(d.id)), [allDocs, homeOf])
+
+  // an old link or search hit for such a video opens its document with that video selected
+  useEffect(() => {
+    const id = docId && decodeURIComponent(docId)
+    const home = id ? homeOf.get(id) : undefined
+    if (!home) return
+    const n = new URLSearchParams(sp)
+    n.set('video', id!)
+    navigate({ pathname: `/manual/${encodeURIComponent(home)}`, search: n.toString() }, { replace: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [docId, homeOf])
   const cats = useMemo(() => categories.filter((c) => !c.deleted).sort((a, b) => a.order - b.order), [categories])
   const counts = useMemo(() => {
     const m = new Map<string, number>()
@@ -84,7 +106,7 @@ export function ManualPage() {
 
   const results = useMemo(() => {
     const byKind = (d: ManualDoc) =>
-      kind === 'all' || (kind === 'videos' ? d.kind === 'video' : kind === 'procedures' ? d.kind === 'procedure' : d.kind !== 'video' && d.kind !== 'procedure')
+      kind === 'all' || (kind === 'videos' ? d.kind === 'video' || videosOf.has(d.id) : kind === 'procedures' ? d.kind === 'procedure' : d.kind !== 'video' && d.kind !== 'procedure')
     if (!q.trim()) {
       const list = liveDocs.filter((d) => (!cat || d.category === cat) && byKind(d))
       const order: Record<string, number> = { guide: 0, segmentation: 1, pdf: 2, procedure: 3, video: 4 }
@@ -95,12 +117,13 @@ export function ManualPage() {
     const hits = runSearch(index, q, { kinds: ['doc', 'section', 'page', 'glossary'] })
     const seen = new Map<string, ReturnType<typeof snippet>>()
     for (const h of hits) {
-      if (!seen.has(h.doc.refId)) seen.set(h.doc.refId, snippet(h.doc.body, h.terms))
+      const id = homeOf.get(h.doc.refId) ?? h.doc.refId // a video hit shows its document
+      if (!seen.has(id)) seen.set(id, snippet(h.doc.body, h.terms))
     }
     return [...seen.entries()]
       .map(([id, snip]) => ({ d: liveDocs.find((x) => x.id === id)!, snip }))
       .filter((x) => x.d && (!cat || x.d.category === cat) && byKind(x.d))
-  }, [q, cat, kind, liveDocs, cats, index])
+  }, [q, cat, kind, liveDocs, cats, index, homeOf, videosOf])
 
   const setParam = (k: string, v?: string) => {
     const n = new URLSearchParams(sp)
@@ -125,7 +148,7 @@ export function ManualPage() {
       </div>
       <div className="chips scroll" style={{ margin: '14px 0 18px' }} role="group" aria-label="Categories">
         <Chip pressed={!cat} onClick={() => setParam('cat')} count={liveDocs.length}>All</Chip>
-        {cats.map((c) => (
+        {cats.filter((c) => counts.get(c.id) || cat === c.id).map((c) => (
           <Chip key={c.id} tone={c.tone} icon={<Glyph name={c.glyph} size={15} />} pressed={cat === c.id} onClick={() => setParam('cat', cat === c.id ? undefined : c.id)} count={counts.get(c.id) ?? 0}>
             {c.name}
           </Chip>
@@ -136,11 +159,11 @@ export function ManualPage() {
         <Empty icon={<FileText />} title="No documents found.">Try another keyword or category.</Empty>
       ) : (
         <div className="doc-grid">
-          {results.map(({ d, snip }) => <DocCard key={d.id} d={d} cat={cats.find((c) => c.id === d.category)} snip={snip} onOpen={() => open(d.id)} />)}
+          {results.map(({ d, snip }) => <DocCard key={d.id} d={d} cat={cats.find((c) => c.id === d.category)} snip={snip} videos={videosOf.get(d.id)} onOpen={() => open(d.id)} />)}
         </div>
       )}
-      {docId && <Reader docId={decodeURIComponent(docId)} onClose={() => navigate({ pathname: '/manual', search: sp.toString().replace(/(^|&)(page|tab|section|t)=[^&]*/g, '') })} />}
-      <div className="row" style={{ marginTop: 18 }}><Badge tone="muted">{liveDocs.filter((d) => d.kind === 'video').length} videos · {liveDocs.filter((d) => d.kind === 'procedure').length} procedure cards · {liveDocs.filter((d) => d.kind === 'pdf' || d.kind === 'guide' || d.kind === 'segmentation').length} documents</Badge></div>
+      {docId && !homeOf.has(decodeURIComponent(docId)) && <Reader docId={decodeURIComponent(docId)} onClose={() => navigate({ pathname: '/manual', search: sp.toString().replace(/(^|&)(page|tab|section|t|video)=[^&]*/g, '') })} />}
+      <div className="row" style={{ marginTop: 18 }}><Badge tone="muted">{liveDocs.filter((d) => d.kind === 'procedure').length} procedure cards · {liveDocs.filter((d) => d.kind === 'pdf' || d.kind === 'guide' || d.kind === 'segmentation').length} documents · {allDocs.filter((d) => d.kind === 'video').length} videos</Badge></div>
     </div>
   )
 }

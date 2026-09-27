@@ -1,23 +1,22 @@
 .home-hero { display: flex; align-items: flex-end; gap: 16px; margin-bottom: 20px; }
 .home-hero h1 { font-size: 1.9rem; letter-spacing: -0.02em; }
+.home-logo { margin-bottom: 8px; }
+.home-logo .mbc-logo { width: 116px; height: auto; color: var(--text); }
 .home-grid {
   display: grid; gap: 16px;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1fr);
-  grid-template-areas:
-    'today coverage notices'
-    'quick coverage recent';
+  grid-template-areas: 'today coverage notices';
+  align-items: start;
 }
 .home-grid > :nth-child(1) { grid-area: today; }
 .home-grid > :nth-child(2) { grid-area: coverage; }
 .home-grid > :nth-child(3) { grid-area: notices; }
-.home-grid > :nth-child(4) { grid-area: quick; }
-.home-grid > :nth-child(5) { grid-area: recent; }
 @media (max-width: 1250px) {
-  .home-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: 'today notices' 'coverage coverage' 'quick recent'; }
+  .home-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: 'today notices' 'coverage coverage'; }
 }
 @media (max-width: 767px) {
   .home-hero h1 { font-size: 1.45rem; }
-  .home-grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'today' 'coverage' 'notices' 'quick' 'recent'; gap: 12px; }
+  .home-grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'today' 'coverage' 'notices'; gap: 12px; }
 }
 
 .home-today { padding: 18px 18px 14px 22px; display: flex; flex-direction: column; gap: 6px; min-height: 220px; }
@@ -43,19 +42,7 @@
 .cov-duty .qc { color: var(--qc2); }
 .cov-duty .missing { color: var(--alert); }
 
-.quick { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; padding: 12px; }
-.quick-btn {
-  display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px; min-height: 86px; border-radius: 12px;
-  border: 1px solid var(--line); background: var(--surface-2); color: var(--text); font-weight: 560; font-size: 0.85rem; text-align: left;
-  transition: border-color var(--dur), background var(--dur), transform var(--dur);
-}
-.quick-btn svg { width: 20px; height: 20px; color: var(--accent-2); }
-.quick-btn.tone-alert svg { color: var(--alert); }
-.quick-btn:hover { border-color: var(--line-strong); background: var(--surface-3); transform: translateY(-1px); }
 
-.recent-row { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 10px; border: 0; background: none; text-align: left; color: var(--text); }
-.recent-row:hover { background: var(--hover); }
-.recent-row .glyph { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 9px; flex: none; color: var(--tone); background: color-mix(in srgb, var(--tone) 15%, transparent); }
 
 .notices { list-style: none; margin: 0; padding: 8px; display: flex; flex-direction: column; gap: 4px; }
 .notice-row { display: flex; align-items: center; gap: 10px; padding: 8px 6px 8px 12px; border-radius: 10px; background: color-mix(in srgb, var(--tone) 8%, transparent); }

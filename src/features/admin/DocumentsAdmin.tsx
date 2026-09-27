@@ -99,6 +99,9 @@ function AddDoc({ initial, onClose }: { initial?: ManualDoc; onClose: () => void
   const [p, setP] = useState(0)
   const ref = useRef<HTMLInputElement>(null)
   const set = (x: Partial<ManualDoc>) => setD({ ...d, ...x })
+  // documents a video can be shown inside (procedures, guides, PDFs, the segmentation map)
+  const allDocs = useHub((s) => s.data.docs)
+  const textDocs = live(allDocs).filter((x) => x.kind !== 'video').sort((a, b) => (a.reference ?? '').localeCompare(b.reference ?? '', undefined, { numeric: true }) || a.title.localeCompare(b.title))
 
   const save = async () => {
     const id = initial?.id ?? `${kind === 'video' ? 'vid' : kind === 'pdf' ? 'doc' : 'proc'}-${slug(d.title ?? 'doc')}-${uid().slice(0, 4)}`
@@ -180,6 +183,19 @@ function AddDoc({ initial, onClose }: { initial?: ManualDoc; onClose: () => void
           <Field label="Revision date" htmlFor="ad-u"><input id="ad-u" type="date" className="input" value={d.updated ?? ''} onChange={(e) => set({ updated: e.target.value || undefined })} /></Field>
         </div>
         <Field label="Description" htmlFor="ad-d"><textarea id="ad-d" className="textarea" value={d.description ?? ''} onChange={(e) => set({ description: e.target.value })} dir="auto" /></Field>
+        {kind === 'video' && (
+          <Field label="Show inside document" htmlFor="ad-home" hint="The video appears above that document’s text instead of as a separate card.">
+            <select
+              id="ad-home"
+              className="select"
+              value={(d.related ?? []).find((id) => textDocs.some((x) => x.id === id)) ?? ''}
+              onChange={(e) => set({ related: [...(e.target.value ? [e.target.value] : []), ...(d.related ?? []).filter((id) => !textDocs.some((x) => x.id === id))] })}
+            >
+              <option value="">— On its own in the library —</option>
+              {textDocs.map((x) => <option key={x.id} value={x.id}>{x.reference ? `${x.reference} · ` : ''}{x.title}</option>)}
+            </select>
+          </Field>
+        )}
         {kind === 'procedure' && !initial && (
           <Field label="Procedure steps" htmlFor="ad-b" hint="Use “# ” for headings, “- ” for bullets, “1. ” for numbered steps and “! ” for a NOTE call-out.">
             <textarea id="ad-b" className="textarea" style={{ minHeight: 220 }} value={body} onChange={(e) => setBody(e.target.value)} dir="auto" />

@@ -1,19 +1,14 @@
-import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {
-  BookOpen, CalendarDays, CheckCircle2, ChevronRight, CircleAlert, Clock, Contact, FileSpreadsheet, Info, Play, ShieldAlert,
-  Star, TriangleAlert, UserPlus, X, FileText,
-} from 'lucide-react'
-import { canSeeBlacklist, useHub, usePerms } from '../../data/store'
-import { greeting, hm, longDate, relativeDateTime, formatDuration, shortDay, today } from '../../lib/dates'
-import { Badge, Empty, cx, Glyph } from '../../ui/primitives'
+import { CalendarDays, CheckCircle2, ChevronRight, CircleAlert, Clock, Info, Star, TriangleAlert, X } from 'lucide-react'
+import { useHub } from '../../data/store'
+import { greeting, hm, longDate, relativeDateTime, shortDay, today } from '../../lib/dates'
+import { Badge, Empty, cx } from '../../ui/primitives'
 import { dayModel, cellOf, bandOf, hoursOf } from '../rota/model'
-import { rotaTodayNow, useRotaCtx, useRotaToday } from '../rota/useRota'
-import { openCellEditor } from '../rota/CellEditor'
+import { useRotaCtx, useRotaToday } from '../rota/useRota'
 import { useNotices } from './notices'
-import { useSearchPalette } from '../search/SearchPalette'
 import type { Section } from '../../data/types'
 import { InstallBanner } from '../install/Install'
+import { MbcLogo } from '../../ui/MbcLogo'
 import './home.css'
 
 function currentBand(sections: Section[], now = new Date()): string | undefined {
@@ -122,68 +117,6 @@ function Coverage() {
   )
 }
 
-function QuickActions() {
-  const navigate = useNavigate()
-  const perms = usePerms()
-  const showBl = useHub(() => canSeeBlacklist())
-  const palette = useSearchPalette()
-  const actions = [
-    { icon: <CalendarDays />, label: 'View today’s rota', on: () => navigate('/rota') },
-    perms.editRota && { icon: <UserPlus />, label: 'Assign shift', on: () => { navigate('/rota'); openCellEditor({ date: rotaTodayNow() }) } },
-    { icon: <BookOpen />, label: 'Open Work Manual', on: () => navigate('/manual') },
-    { icon: <Contact />, label: 'Search contacts', on: () => navigate('/contacts?focusSearch=1') },
-    perms.importRota && { icon: <FileSpreadsheet />, label: 'Import new rota', on: () => navigate('/rota/import') },
-    showBl && { icon: <ShieldAlert />, label: 'Check the blacklist', on: () => navigate('/blacklist'), tone: 'alert' },
-    { icon: <FileText />, label: 'Search everything', on: palette.open },
-  ].filter(Boolean) as { icon: React.ReactNode; label: string; on: () => void; tone?: string }[]
-  return (
-    <section className="card" aria-label="Quick actions">
-      <div className="card-head"><span className="eyebrow">Quick actions</span></div>
-      <div className="quick">
-        {actions.map((a) => (
-          <button key={a.label} className={cx('quick-btn', a.tone && `tone-${a.tone}`)} onClick={a.on}>
-            {a.icon}<span>{a.label}</span>
-          </button>
-        ))}
-      </div>
-    </section>
-  )
-}
-
-function Recent() {
-  const navigate = useNavigate()
-  const recent = useHub((s) => s.local.recent)
-  const docs = useHub((s) => s.data.docs)
-  const categories = useHub((s) => s.data.categories)
-  const list = useMemo(() => {
-    const byId = new Map(docs.filter((d) => !d.deleted).map((d) => [d.id, d]))
-    const r = recent.map((x) => byId.get(x.id)).filter(Boolean)
-    if (r.length >= 3) return { title: 'Recently opened', items: r.slice(0, 5) }
-    const featured = ['vid-qc2', 'user-guide', 'segmentation-map', 'proc-01', 'proc-09'].map((id) => byId.get(id)).filter(Boolean)
-    return { title: r.length ? 'Recently opened' : 'Start here', items: [...r, ...featured.filter((f) => !r.includes(f))].slice(0, 5) }
-  }, [recent, docs])
-  return (
-    <section className="card" aria-label={list.title}>
-      <div className="card-head"><span className="eyebrow">{list.title}</span><button className="btn btn-sm btn-ghost" onClick={() => navigate('/manual')}>All documents <ChevronRight /></button></div>
-      <div className="col" style={{ padding: 8, gap: 2 }}>
-        {list.items.map((d) => {
-          const cat = categories.find((c) => c.id === d!.category)
-          return (
-            <button key={d!.id} className={cx('recent-row', `tone-${cat?.tone}`)} onClick={() => navigate(`/manual/${d!.id}`)}>
-              <span className="glyph">{d!.kind === 'video' ? <Play width={16} /> : <Glyph name={cat?.glyph ?? 'file'} size={16} />}</span>
-              <span className="col grow" style={{ gap: 0, minWidth: 0 }}>
-                <span className="truncate" style={{ fontWeight: 560 }}>{d!.title}</span>
-                <span className="tiny faint">{cat?.name}{d!.duration ? ` · ${formatDuration(d!.duration)}` : d!.pageCount ? ` · ${d!.pageCount} pages` : ''}</span>
-              </span>
-              <ChevronRight width={16} className="faint" />
-            </button>
-          )
-        })}
-      </div>
-    </section>
-  )
-}
-
 function Notices() {
   const notices = useNotices()
   const navigate = useNavigate()
@@ -219,6 +152,7 @@ export function HomePage() {
     <div className="home">
       <header className="home-hero">
         <div className="col" style={{ gap: 6 }}>
+          <div className="mobile-only home-logo"><MbcLogo /></div>
           <span className="eyebrow">Editing &amp; Editorial Hub</span>
           <h1>{greeting()}{first ? `, ${first}` : ''}</h1>
           <div className="row-wrap small muted">
@@ -233,8 +167,6 @@ export function HomePage() {
         <TodayCard />
         <Coverage />
         <Notices />
-        <QuickActions />
-        <Recent />
       </div>
     </div>
   )
